@@ -1,0 +1,276 @@
+@import "tailwindcss";
+
+/* ------------------------------------------------------------------
+   Android Academy design tokens
+   A near-black developer-tool surface, restrained borders, one bright
+   chartreuse accent, and semantic colour for difficulty and state.
+   ------------------------------------------------------------------ */
+
+@theme {
+  --color-bg: #08090b;
+  --color-bg-raised: #0d0f13;
+  --color-surface: #101318;
+  --color-surface-2: #171b22;
+  --color-surface-3: #1e232c;
+  --color-line: #1e2330;
+  --color-line-strong: #2a313d;
+
+  --color-fg: #e8ecf2;
+  --color-fg-dim: #b6becb;
+  --color-muted: #848e9d;
+  --color-subtle: #5a6472;
+  --color-faint: #3c4350;
+
+  --color-accent: #c8fa4b;
+  --color-accent-soft: #d9ff86;
+  --color-accent-deep: #9ac62f;
+  --color-accent-ink: #0c1400;
+
+  --color-done: #4ade80;
+  --color-warmup: #7dd3fc;
+  --color-easy: #4ade80;
+  --color-medium: #ffa64d;
+  --color-hard: #ff5f80;
+  --color-info: #7aa9ff;
+  --color-violet: #b28cff;
+
+  --font-sans: var(--font-inter), ui-sans-serif, system-ui, -apple-system,
+    "Segoe UI", sans-serif;
+  --font-mono: var(--font-mono-jb), ui-monospace, SFMono-Regular, "SF Mono",
+    Menlo, Consolas, monospace;
+
+  --radius-card: 14px;
+
+  --ease-out-soft: cubic-bezier(0.22, 1, 0.36, 1);
+}
+
+@layer base {
+  * {
+    border-color: var(--color-line);
+  }
+
+  html {
+    color-scheme: dark;
+    -webkit-font-smoothing: antialiased;
+    text-rendering: optimizeLegibility;
+  }
+
+  body {
+    background-color: var(--color-bg);
+    color: var(--color-fg);
+    font-family: var(--font-sans);
+    font-feature-settings: "cv02", "cv03", "cv04", "ss01";
+  }
+
+  ::selection {
+    background: color-mix(in oklab, var(--color-accent) 30%, transparent);
+    color: var(--color-fg);
+  }
+
+  h1,
+  h2,
+  h3,
+  h4 {
+    letter-spacing: -0.018em;
+  }
+
+  code,
+  pre,
+  kbd {
+    font-family: var(--font-mono);
+    font-variant-ligatures: none;
+  }
+
+  /* Restrained scrollbars, IDE-flavoured. */
+  ::-webkit-scrollbar {
+    width: 10px;
+    height: 10px;
+  }
+  ::-webkit-scrollbar-track {
+    background: transparent;
+  }
+  ::-webkit-scrollbar-thumb {
+    background: var(--color-surface-3);
+    border-radius: 999px;
+    border: 3px solid transparent;
+    background-clip: content-box;
+  }
+  ::-webkit-scrollbar-thumb:hover {
+    background: var(--color-line-strong);
+    background-clip: content-box;
+  }
+
+  :focus-visible {
+    outline: 2px solid color-mix(in oklab, var(--color-accent) 70%, transparent);
+    outline-offset: 2px;
+    border-radius: 4px;
+  }
+}
+
+@layer utilities {
+  .mono-label {
+    font-family: var(--font-mono);
+    font-size: 10.5px;
+    line-height: 1;
+    letter-spacing: 0.13em;
+    text-transform: uppercase;
+  }
+
+  .mono-meta {
+    font-family: var(--font-mono);
+    font-size: 11.5px;
+    letter-spacing: 0.02em;
+  }
+
+  .card-lift {
+    transition:
+      transform 180ms var(--ease-out-soft),
+      border-color 180ms var(--ease-out-soft),
+      background-color 180ms var(--ease-out-soft);
+  }
+  .card-lift:hover {
+    transform: translateY(-2px);
+  }
+
+  .hairline {
+    background-image: linear-gradient(
+      to right,
+      transparent,
+      var(--color-line-strong),
+      transparent
+    );
+  }
+
+  .grid-noise {
+    background-image:
+      linear-gradient(
+        to right,
+        color-mix(in oklab, var(--color-line) 55%, transparent) 1px,
+        transparent 1px
+      ),
+      linear-gradient(
+        to bottom,
+        color-mix(in oklab, var(--color-line) 55%, transparent) 1px,
+        transparent 1px
+      );
+    background-size: 44px 44px;
+  }
+
+  .scrollbar-none {
+    scrollbar-width: none;
+  }
+  .scrollbar-none::-webkit-scrollbar {
+    display: none;
+  }
+}
+
+/* ------------------------------------------------------------------
+   Microinteractions — quick, professional, never showy.
+   ------------------------------------------------------------------ */
+
+@keyframes aa-fade-up {
+  from {
+    opacity: 0;
+    transform: translateY(6px);
+  }
+  to {
+    opacity: 1;
+    transform: none;
+  }
+}
+
+@keyframes aa-fade-in {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
+
+@keyframes aa-check-pop {
+  0% {
+    transform: scale(0.6);
+    opacity: 0;
+  }
+  60% {
+    transform: scale(1.12);
+    opacity: 1;
+  }
+  100% {
+    transform: scale(1);
+    opacity: 1;
+  }
+}
+
+@keyframes aa-draw {
+  from {
+    stroke-dashoffset: 24;
+  }
+  to {
+    stroke-dashoffset: 0;
+  }
+}
+
+@keyframes aa-tick-up {
+  from {
+    transform: translateY(60%);
+    opacity: 0;
+  }
+  to {
+    transform: none;
+    opacity: 1;
+  }
+}
+
+@keyframes aa-pulse-ring {
+  0% {
+    box-shadow: 0 0 0 0 color-mix(in oklab, var(--color-accent) 45%, transparent);
+  }
+  70% {
+    box-shadow: 0 0 0 10px transparent;
+  }
+  100% {
+    box-shadow: 0 0 0 0 transparent;
+  }
+}
+
+.animate-fade-up {
+  animation: aa-fade-up 340ms var(--ease-out-soft) both;
+}
+.animate-fade-in {
+  animation: aa-fade-in 260ms var(--ease-out-soft) both;
+}
+.animate-check {
+  animation: aa-check-pop 320ms var(--ease-out-soft) both;
+}
+.animate-draw {
+  stroke-dasharray: 24;
+  animation: aa-draw 320ms var(--ease-out-soft) 80ms both;
+}
+.animate-tick {
+  animation: aa-tick-up 320ms var(--ease-out-soft) both;
+}
+.animate-ring {
+  animation: aa-pulse-ring 900ms var(--ease-out-soft);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+  }
+  .card-lift:hover {
+    transform: none;
+  }
+}
+
+/* Monaco blends into the surface rather than sitting on top of it. */
+.monaco-editor,
+.monaco-editor .margin,
+.monaco-editor-background {
+  background-color: var(--color-bg-raised) !important;
+}

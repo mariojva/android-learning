@@ -1,0 +1,86 @@
+name: Deploy to GitHub Pages
+
+on:
+  push:
+    branches: [main]
+  # Lets you redeploy without a commit — useful after changing the Supabase
+  # repository variables, which are baked in at build time.
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  pages: write
+  id-token: write
+
+# One deploy at a time. Queued runs wait rather than racing; an in-flight
+# run is not cancelled, because a half-deployed site is worse than a slow one.
+concurrency:
+  group: pages
+  cancel-in-progress: false
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+
+      - name: Install
+        run: npm ci
+
+      - name: Work out the base path
+        # A project page lives at https://<owner>.github.io/<repo>/, so assets
+        # need a prefix. A user site or a custom domain is served from the
+        # root and must not have one.
+        run: |
+          REPO="${GITHUB_REPOSITORY#*/}"
+          OWNER="${GITHUB_REPOSITORY%%/*}"
+          if [ -f public/CNAME ]; then
+            echo "Custom domain (public/CNAME present) — no base path"
+            echo "NEXT_PUBLIC_BASE_PATH=" >> "$GITHUB_ENV"
+          elif [ "$REPO" = "${OWNER}.github.io" ]; then
+            echo "User site — no base path"
+            echo "NEXT_PUBLIC_BASE_PATH=" >> "$GITHUB_ENV"
+          else
+            echo "Project page — base path /$REPO"
+            echo "NEXT_PUBLIC_BASE_PATH=/$REPO" >> "$GITHUB_ENV"
+          fi
+
+      - name: Build
+        env:
+          # Repository variables (Settings → Secrets and variables → Actions →
+          # Variables). Secrets with the same names work too. Absent, the site
+          # still builds and runs in signed-out local mode.
+          NEXT_PUBLIC_SUPABASE_URL: ${{ vars.NEXT_PUBLIC_SUPABASE_URL || secrets.NEXT_PUBLIC_SUPABASE_URL }}
+          NEXT_PUBLIC_SUPABASE_ANON_KEY: ${{ vars.NEXT_PUBLIC_SUPABASE_ANON_KEY || secrets.NEXT_PUBLIC_SUPABASE_ANON_KEY }}
+          NEXT_PUBLIC_KOTLIN_RUNNER_URL: ${{ vars.NEXT_PUBLIC_KOTLIN_RUNNER_URL }}
+        run: npm run build
+
+      - name: Check the export looks right
+        # Catches the two failures that otherwise only show up as a blank
+        # page after a green deploy.
+        run: |
+          test -f out/index.html || { echo "::error::out/index.html is missing"; exit 1; }
+          test -f out/404.html   || { echo "::error::out/404.html is missing"; exit 1; }
+          test -f out/.nojekyll  || { echo "::error::out/.nojekyll is missing — _next/ would be dropped"; exit 1; }
+          echo "Exported $(find out -name '*.html' | wc -l) HTML files"
+
+      - uses: actions/configure-pages@v5
+
+      - uses: actions/upload-pages-artifact@v3
+        with:
+          path: out
+
+  deploy:
+    needs: build
+    runs-on: ubuntu-latest
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    steps:
+      - id: deployment
+        uses: actions/deploy-pages@v4

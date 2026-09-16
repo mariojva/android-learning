@@ -5,6 +5,7 @@ import type { Question } from "@/lib/types";
 import { DifficultyPill, Badge, Button } from "@/components/ui/primitives";
 import { CodingWorkspace } from "./CodingWorkspace";
 import { CodeReadingWorkspace } from "./CodeReadingWorkspace";
+import { CodeReviewWorkspace } from "./CodeReviewWorkspace";
 import { DebuggingWorkspace } from "./DebuggingWorkspace";
 import { QuizWorkspace } from "./QuizWorkspace";
 import { SystemDesignWorkspace } from "./SystemDesignWorkspace";
@@ -102,6 +103,8 @@ function Workspace({ question }: { question: Question }) {
   switch (question.format) {
     case "code-reading":
       return <CodeReadingWorkspace question={question} />;
+    case "code-review":
+      return <CodeReviewWorkspace question={question} />;
     case "debugging":
       return <DebuggingWorkspace question={question} />;
     case "quiz":

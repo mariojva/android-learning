@@ -11,6 +11,7 @@ export type Difficulty = "Warmup" | "Easy" | "Medium" | "Hard";
 export type QuestionFormat =
   | "coding"
   | "code-reading"
+  | "code-review"
   | "debugging"
   | "quiz"
   | "system-design";
@@ -115,6 +116,45 @@ export interface DebugHint {
   body: string;
 }
 
+/* --------------------------- Code review ---------------------------- */
+
+/**
+ * Knowing what to block on is most of the skill. A reviewer who marks
+ * everything `blocking` is routed around within a month; one who never
+ * does is not actually reviewing.
+ */
+export type ReviewSeverity = "blocking" | "should-fix" | "nit" | "praise";
+
+export interface ReviewFinding {
+  id: string;
+  /** 1-based line into `reviewCode` this comment is anchored to. */
+  line: number;
+  /** For an issue that spans a block rather than a statement. */
+  throughLine?: number;
+  severity: ReviewSeverity;
+  /** The headline a reviewer would actually leave on the line. */
+  summary: string;
+  /** The reasoning — why it matters, not merely what is wrong. */
+  detail: string;
+  /** Terms a learner's own note tends to contain once they have seen it. */
+  keywords?: string[];
+}
+
+export interface CodeReviewBrief {
+  prTitle: string;
+  author: string;
+  /** The description as its author wrote it. Occasionally misleading. */
+  description: string[];
+  filesChanged?: string[];
+  /** Any context a reviewer would already hold about this codebase. */
+  context?: string[];
+}
+
+export interface ReviewVerdict {
+  decision: "approve" | "comment" | "request-changes";
+  rationale: string;
+}
+
 export interface SystemDesignStage {
   id: string;
   title: string;
@@ -163,6 +203,12 @@ export interface Question {
   /* Code reading */
   readingCode?: string;
   readingPrompts?: CodeReadingPrompt[];
+
+  /* Code review */
+  review?: CodeReviewBrief;
+  reviewCode?: string;
+  reviewFindings?: ReviewFinding[];
+  reviewVerdict?: ReviewVerdict;
 
   /* Quiz */
   quizStem?: string;

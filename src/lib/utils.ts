@@ -63,6 +63,7 @@ export const difficultyStyles: Record<
 export const formatLabels: Record<QuestionFormat, string> = {
   coding: "Coding",
   "code-reading": "Code Reading",
+  "code-review": "Code Review",
   debugging: "Debugging",
   quiz: "Quiz",
   "system-design": "System Design",

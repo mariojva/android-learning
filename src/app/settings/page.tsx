@@ -293,6 +293,7 @@ export default function SettingsPage() {
             <Badge>{QUESTION_COUNTS.total} questions</Badge>
             <Badge>{QUESTION_COUNTS.coding} coding</Badge>
             <Badge>{QUESTION_COUNTS.codeReading} code reading</Badge>
+            <Badge>{QUESTION_COUNTS.codeReview} code review</Badge>
             <Badge>{QUESTION_COUNTS.debugging} debugging</Badge>
             <Badge>{QUESTION_COUNTS.quiz} quizzes</Badge>
             <Badge>{QUESTION_COUNTS.systemDesign} system design</Badge>

@@ -45,7 +45,16 @@ export default async function LearnHubPage({
     m.topics.some((t) => hub.topics.includes(t)),
   );
 
-  const byFormat = (["coding", "code-reading", "debugging", "quiz", "system-design"] as const)
+  const byFormat = (
+    [
+      "coding",
+      "code-reading",
+      "code-review",
+      "debugging",
+      "quiz",
+      "system-design",
+    ] as const
+  )
     .map((format) => ({
       format,
       count: questions.filter((q) => q.format === format).length,

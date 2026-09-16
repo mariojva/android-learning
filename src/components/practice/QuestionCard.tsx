@@ -14,6 +14,7 @@ import {
   IconBook,
   IconSitemap,
   IconTerminal,
+  IconEye,
 } from "@/components/icons";
 import { cn, formatCount, formatLabels } from "@/lib/utils";
 import { topicLabel } from "@/data/topics";
@@ -23,6 +24,7 @@ import type { IconProps } from "@/components/icons";
 const FORMAT_ICON: Record<Question["format"], ComponentType<IconProps>> = {
   coding: IconTerminal,
   "code-reading": IconBook,
+  "code-review": IconEye,
   debugging: IconBug,
   quiz: IconQuiz,
   "system-design": IconSitemap,

@@ -23,6 +23,7 @@ const TABS: { id: "all" | QuestionFormat; label: string }[] = [
   { id: "all", label: "All" },
   { id: "coding", label: "Coding" },
   { id: "code-reading", label: "Code Reading" },
+  { id: "code-review", label: "Code Review" },
   { id: "debugging", label: "Debugging" },
   { id: "quiz", label: "Quiz" },
   { id: "system-design", label: "System Design" },

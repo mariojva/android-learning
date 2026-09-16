@@ -20,6 +20,7 @@ import {
   IconSettings,
   IconBook,
   IconGrid,
+  IconEye,
 } from "@/components/icons";
 
 export interface NavItem {
@@ -60,6 +61,7 @@ export const NAV: NavGroup[] = [
       { label: "Kotlin Drills", href: "/practice/topic/kotlin-drills", icon: IconBraces },
       { label: "Android Challenges", href: "/practice/topic/android-challenges", icon: IconAndroid },
       { label: "Code Reading", href: "/practice/topic/code-reading", icon: IconBook },
+      { label: "Code Review", href: "/practice/topic/code-review", icon: IconEye },
       { label: "Debugging", href: "/practice/topic/debugging", icon: IconBug },
       { label: "Quizzes", href: "/practice/topic/quizzes", icon: IconQuiz },
       { label: "Interview Coding", href: "/practice/topic/interview-coding", icon: IconTerminal },
@@ -113,6 +115,12 @@ export const PRACTICE_COLLECTIONS: Record<
     subtitle:
       "Realistic Kotlin and Android code. Explain what it does, what it costs, and what breaks.",
     format: "code-reading",
+  },
+  "code-review": {
+    title: "Code Review",
+    subtitle:
+      "Somebody else's pull request. Say what you would say on the line you would say it, then compare.",
+    format: "code-review",
   },
   debugging: {
     title: "Debugging",

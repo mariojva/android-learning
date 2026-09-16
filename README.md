@@ -45,15 +45,15 @@ npm run build       # production build
 | Day 1 lesson | `/lessons/day-1` | The full 120-minute guided session |
 | Practice browser | `/practice` | Tabs, topic/difficulty/type/status filters, search |
 | Question detail | `/practice/[slug]` | Five different experiences, by question format |
-| Collections | `/practice/topic/[slug]` | Kotlin drills, Android challenges, code reading, debugging, quizzes, interview coding |
-| System design | `/system-design` | Five long-form exercises, 14 stages each |
+| Collections | `/practice/topic/[slug]` | Kotlin drills, Android challenges, code reading, code review, debugging, quizzes, interview coding |
+| System design | `/system-design` | Nine long-form exercises, 14 stages each |
 | Study plan | `/study-plans` | Twelve weeks at two hours a day |
 | Bookmarks & notes | `/bookmarks` | |
 | Progress | `/progress` | Mastery, difficulty split, streaks, recent attempts |
 | Sign in | `/auth` | Email + password; stands outside the app shell |
 | Settings | `/settings` | Account, persistence, runner status, reset/import |
 
-### The five question experiences
+### The six question experiences
 
 The question page dispatches on `question.format`, and each mode is built around
 a different demand:
@@ -62,6 +62,13 @@ a different demand:
   Run and Submit, then a ten-part worked solution that unlocks after an attempt.
 - **Code reading** — the code stays pinned while questions arrive one at a time.
   You must write an answer before the expert one is revealed.
+- **Code review** — a pull request with a description, a file list and the
+  context you would already hold. You comment on the lines you would comment on,
+  choose a severity for each, and commit to approve / comment / request changes.
+  Submitting reveals the reference review anchored to the same lines, and scores
+  what you caught, what you missed, and where you weighted an issue differently
+  to the reviewer. One of the six should be approved; blocking all six is the
+  wrong answer.
 - **Debugging** — the symptom, the broken code, and a diagnosis you have to
   commit to. Hints unlock one at a time; the root cause unlocks after you commit.
 - **Quiz** — answering explains *every* option, including why each wrong one is
@@ -73,20 +80,29 @@ a different demand:
 
 ## Seeded content
 
-104 questions, all written for this platform rather than adapted:
+122 questions, all written for this platform rather than adapted:
 
 | By track | | By format | | By difficulty | |
 | --- | --- | --- | --- | --- | --- |
-| Kotlin | 36 | Coding | 45 | Warmup | 3 |
-| Android | 23 | Quiz | 30 | Easy | 28 |
-| Compose | 15 | Code reading | 13 | Medium | 53 |
-| Interview (DSA) | 15 | Debugging | 11 | Hard | 20 |
-| Architecture | 10 | System design | 5 | | |
-| System design | 5 | | | | |
+| Kotlin | 36 | Coding | 47 | Warmup | 3 |
+| Android | 24 | Quiz | 31 | Easy | 28 |
+| Architecture | 22 | Code reading | 17 | Medium | 61 |
+| Compose | 16 | Debugging | 12 | Hard | 30 |
+| Interview (DSA) | 15 | System design | 9 | | |
+| System design | 9 | Code review | 6 | | |
 
 Fifteen of those are coroutine and Flow questions specifically. Plus 16 path
 modules, a 12-week study plan, and the complete Day 1 lesson (7 sections,
 120 minutes, 40 blocks).
+
+Two groups exist for competence at work rather than performance in an
+interview. `src/data/questions/codeReview.ts` holds six pull requests to review
+— the format has its own experience, described below. `src/data/questions/senior.ts`
+holds the reading, migration and testing-judgement set: reading a ninety-line
+sync layer you did not write, reading a nine-file change-set rather than a file,
+planning a migration that can be stopped halfway, Compose/Fragment interop,
+choosing what deserves a test, fakes over mocks, what a flaky test is telling
+you, and testing at the right seam.
 
 Content lives in `src/data/` as typed TypeScript. That is deliberate: it is
 versioned with the code, reviewable in a pull request, and needs no round trip to
@@ -105,7 +121,7 @@ src/
     ui/           primitives + the Kotlin syntax highlighter
     dashboard/    stat panels and the activity heatmap
     practice/     question cards and the filtering browser
-    question/     the five question experiences + Monaco editor
+    question/     the six question experiences + Monaco editor
     lesson/       lesson block renderers and the Day 1 view
   data/           seeded content (questions, path, plan, lessons, profile)
   lib/

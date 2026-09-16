@@ -5,6 +5,9 @@ import { CONCURRENCY_QUESTIONS } from "./concurrency";
 import { COMPOSE_QUESTIONS } from "./compose";
 import { ANDROID_QUESTIONS } from "./android";
 import { ARCHITECTURE_QUESTIONS } from "./architecture";
+import { CODE_REVIEW_QUESTIONS } from "./codeReview";
+import { SENIOR_QUESTIONS } from "./senior";
+import { SYSTEM_DESIGN_EXTRA_QUESTIONS } from "./systemDesignExtra";
 import { SYSTEM_DESIGN_QUESTIONS } from "./systemDesign";
 import { DSA_QUESTIONS } from "./dsa";
 
@@ -15,7 +18,10 @@ export const ALL_QUESTIONS: Question[] = [
   ...COMPOSE_QUESTIONS,
   ...ANDROID_QUESTIONS,
   ...ARCHITECTURE_QUESTIONS,
+  ...CODE_REVIEW_QUESTIONS,
+  ...SENIOR_QUESTIONS,
   ...SYSTEM_DESIGN_QUESTIONS,
+  ...SYSTEM_DESIGN_EXTRA_QUESTIONS,
   ...DSA_QUESTIONS,
 ];
 
@@ -55,6 +61,7 @@ export const QUESTION_COUNTS = {
   total: ALL_QUESTIONS.length,
   coding: questionsByFormat("coding").length,
   codeReading: questionsByFormat("code-reading").length,
+  codeReview: questionsByFormat("code-review").length,
   debugging: questionsByFormat("debugging").length,
   quiz: questionsByFormat("quiz").length,
   systemDesign: questionsByFormat("system-design").length,
@@ -67,6 +74,9 @@ export {
   COMPOSE_QUESTIONS,
   ANDROID_QUESTIONS,
   ARCHITECTURE_QUESTIONS,
+  CODE_REVIEW_QUESTIONS,
+  SENIOR_QUESTIONS,
   SYSTEM_DESIGN_QUESTIONS,
+  SYSTEM_DESIGN_EXTRA_QUESTIONS,
   DSA_QUESTIONS,
 };

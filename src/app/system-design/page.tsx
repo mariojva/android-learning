@@ -1,7 +1,11 @@
 import type { Metadata } from "next";
 import Link from "next/link";
 import { PageHeader, Card, DifficultyPill, Badge } from "@/components/ui/primitives";
-import { SYSTEM_DESIGN_QUESTIONS, DESIGN_STAGE_TITLES } from "@/data/questions/systemDesign";
+import { DESIGN_STAGE_TITLES } from "@/data/questions/systemDesign";
+import { questionsByFormat } from "@/data/questions";
+
+/** Every design exercise, wherever it is defined. */
+const SYSTEM_DESIGN_QUESTIONS = questionsByFormat("system-design");
 import { IconClock, IconArrowRight, IconSitemap } from "@/components/icons";
 
 export const metadata: Metadata = {

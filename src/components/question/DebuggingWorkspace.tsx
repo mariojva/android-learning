@@ -15,6 +15,7 @@ import {
   IconEye,
 } from "@/components/icons";
 import { useProgress } from "@/lib/progress/context";
+import { questionAnswerRef, useRestoreAnswers } from "@/lib/progress/answers";
 
 /**
  * The learner investigates before anything unlocks. Hints arrive one at a
@@ -23,15 +24,24 @@ import { useProgress } from "@/lib/progress/context";
  * would have found it.
  */
 export function DebuggingWorkspace({ question }: { question: Question }) {
-  const { recordAttempt } = useProgress();
+  const { recordAttempt, saveAnswer } = useProgress();
   const hints = question.debugHints ?? [];
+  const ref = questionAnswerRef(question.slug, "diagnosis");
 
   const [diagnosis, setDiagnosis] = useState("");
   const [revealedHints, setRevealedHints] = useState(0);
   const [committed, setCommitted] = useState(false);
 
+  useRestoreAnswers([ref], (restored) => {
+    const body = restored[ref]?.body;
+    if (!body) return;
+    setDiagnosis(body);
+    setCommitted(true);
+  });
+
   const commit = () => {
     setCommitted(true);
+    saveAnswer(ref, { body: diagnosis });
     recordAttempt(question.slug, { solved: true, correct: true });
   };
 
@@ -222,6 +232,7 @@ export function DebuggingWorkspace({ question }: { question: Question }) {
                   mechanisms are what transfer to the next bug.
                 </p>
                 <AiFeedback
+                  cacheRef={ref}
                   questionTitle={question.title}
                   prompt={question.symptom ?? ""}
                   referenceAnswer={question.rootCause ?? ""}

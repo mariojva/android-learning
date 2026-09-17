@@ -17,15 +17,19 @@ import {
   IconTerminal,
   IconSpark,
 } from "@/components/icons";
-import { cn, looseMatch, keywordCoverage } from "@/lib/utils";
+import { cn, looseMatch, keywordCoverage, relativeDay } from "@/lib/utils";
 import { AiFeedback } from "@/components/question/AiFeedback";
+import { useProgress } from "@/lib/progress/context";
+import { lessonAnswerRef, useRestoreAnswers } from "@/lib/progress/answers";
 
 export function LessonBlockView({
   block,
+  lessonId,
   completed,
   onComplete,
 }: {
   block: LessonBlock;
+  lessonId: string;
   completed: boolean;
   onComplete: () => void;
 }) {
@@ -35,9 +39,23 @@ export function LessonBlockView({
     case "code":
       return <CodeBlock block={block} />;
     case "predict":
-      return <Predict block={block} completed={completed} onComplete={onComplete} />;
+      return (
+        <Predict
+          block={block}
+          lessonId={lessonId}
+          completed={completed}
+          onComplete={onComplete}
+        />
+      );
     case "explain":
-      return <Explain block={block} completed={completed} onComplete={onComplete} />;
+      return (
+        <Explain
+          block={block}
+          lessonId={lessonId}
+          completed={completed}
+          onComplete={onComplete}
+        />
+      );
     case "quiz":
       return <Quiz block={block} completed={completed} onComplete={onComplete} />;
     case "compare":
@@ -101,16 +119,37 @@ function CodeBlock({ block }: { block: LessonBlock }) {
 
 function Predict({
   block,
+  lessonId,
   completed,
   onComplete,
 }: {
   block: LessonBlock;
+  lessonId: string;
   completed: boolean;
   onComplete: () => void;
 }) {
+  const { progress, saveAnswer } = useProgress();
+  const ref = lessonAnswerRef(lessonId, block.id);
+  const saved = progress.answers[ref];
+
   const [value, setValue] = useState("");
   const [checked, setChecked] = useState(false);
   const correct = block.expected ? looseMatch(value, block.expected) : false;
+
+  // Coming back shows the prediction you made, not an empty box beside a
+  // badge claiming you answered.
+  useRestoreAnswers([ref], (restored) => {
+    const body = restored[ref]?.body;
+    if (!body) return;
+    setValue(body);
+    setChecked(true);
+  });
+
+  const commit = () => {
+    setChecked(true);
+    saveAnswer(ref, { body: value });
+    onComplete();
+  };
 
   return (
     <Card className="max-w-2xl border-accent/15 p-5">
@@ -144,8 +183,7 @@ function Predict({
           className="h-10 flex-1 min-w-[200px] rounded-lg border border-line bg-bg-raised px-3 font-mono text-[13px] text-fg placeholder:text-faint focus:border-line-strong focus:outline-none disabled:opacity-70"
           onKeyDown={(e) => {
             if (e.key === "Enter" && value.trim().length > 0 && !checked) {
-              setChecked(true);
-              onComplete();
+              commit();
             }
           }}
         />
@@ -154,10 +192,7 @@ function Predict({
             tone="primary"
             size="md"
             disabled={value.trim().length === 0}
-            onClick={() => {
-              setChecked(true);
-              onComplete();
-            }}
+            onClick={commit}
           >
             Check
           </Button>
@@ -183,6 +218,7 @@ function Predict({
             {block.answer}
           </p>
           <AiFeedback
+            cacheRef={ref}
             questionTitle={block.title}
             prompt={predictPrompt(block)}
             referenceAnswer={[block.expected, block.answer]
@@ -220,21 +256,39 @@ function predictPrompt(block: LessonBlock): string {
 
 function Explain({
   block,
+  lessonId,
   completed,
   onComplete,
 }: {
   block: LessonBlock;
+  lessonId: string;
   completed: boolean;
   onComplete: () => void;
 }) {
+  const { progress, saveAnswer } = useProgress();
+  const ref = lessonAnswerRef(lessonId, block.id);
+  const saved = progress.answers[ref];
+
   const [value, setValue] = useState("");
   const [revealed, setRevealed] = useState(false);
   const keywords = block.keywords ?? [];
   const covered = keywordCoverage(value, keywords);
 
+  useRestoreAnswers([ref], (restored) => {
+    const body = restored[ref]?.body;
+    if (!body) return;
+    setValue(body);
+    setRevealed(true);
+  });
+
   return (
     <Card className="max-w-2xl p-5">
-      {completed && !revealed ? (
+      {revealed && saved?.body ? (
+        <Badge tone="done" className="mb-3">
+          <IconCheck size={10} />
+          Answered {relativeDay(saved.updatedAt)}
+        </Badge>
+      ) : completed && !revealed ? (
         <Badge tone="done" className="mb-3">
           <IconCheck size={10} />
           Answered earlier
@@ -279,6 +333,7 @@ function Explain({
             disabled={value.trim().length < 15}
             onClick={() => {
               setRevealed(true);
+              saveAnswer(ref, { body: value });
               onComplete();
             }}
           >
@@ -312,6 +367,7 @@ function Explain({
               {block.answer}
             </p>
             <AiFeedback
+              cacheRef={ref}
               questionTitle={block.title}
               prompt={explainPrompt(block)}
               referenceAnswer={block.answer ?? ""}

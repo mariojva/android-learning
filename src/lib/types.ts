@@ -376,6 +376,23 @@ export interface Note {
   updatedAt: string;
 }
 
+/** How a graded free-text answer came out. */
+export type AnswerVerdict = "strong" | "partial" | "off-track";
+
+/**
+ * What the learner actually wrote, kept so revisiting a lesson block or a
+ * question shows their own words rather than a bare "answered earlier".
+ * The verdict and feedback are cached alongside it because grading costs a
+ * real API call -- re-reading your own answer should not re-charge for it.
+ */
+export interface SavedAnswer {
+  ref: string;
+  body: string;
+  verdict?: AnswerVerdict;
+  feedback?: string;
+  updatedAt: string;
+}
+
 export interface StudySession {
   date: string;
   minutes: number;
@@ -401,6 +418,8 @@ export interface ProgressState {
   attempts: Record<string, QuestionAttempt>;
   bookmarks: Bookmark[];
   notes: Record<string, Note>;
+  /** Keyed by ref: `lesson:<lessonId>#<blockId>` or `question:<slug>#<partId>`. */
+  answers: Record<string, SavedAnswer>;
   lessonProgress: Record<string, { completedBlocks: string[]; completedAt?: string }>;
   sessions: StudySession[];
   /** Seeded so the dashboard is populated on first run. */

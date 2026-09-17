@@ -97,6 +97,23 @@ create table if not exists public.notes (
 );
 
 -- -------------------------------------------------------------------
+-- Saved answers
+--
+-- The learner's own words for a free-text prompt, plus the cached grade
+-- if they asked for one. Separate from `notes` because a note is
+-- something you choose to write; this is the work itself.
+-- -------------------------------------------------------------------
+create table if not exists public.answers (
+  user_id     uuid not null references auth.users(id) on delete cascade,
+  ref         text not null,
+  body        text not null,
+  verdict     text check (verdict in ('strong', 'partial', 'off-track')),
+  feedback    text,
+  updated_at  timestamptz not null default now(),
+  primary key (user_id, ref)
+);
+
+-- -------------------------------------------------------------------
 -- Lesson progress
 -- -------------------------------------------------------------------
 create table if not exists public.lesson_progress (
@@ -143,6 +160,7 @@ alter table public.profiles          enable row level security;
 alter table public.question_attempts enable row level security;
 alter table public.bookmarks         enable row level security;
 alter table public.notes             enable row level security;
+alter table public.answers           enable row level security;
 alter table public.lesson_progress   enable row level security;
 alter table public.study_sessions    enable row level security;
 alter table public.streaks           enable row level security;
@@ -152,7 +170,7 @@ declare
   t text;
 begin
   foreach t in array array[
-    'question_attempts', 'bookmarks', 'notes',
+    'question_attempts', 'bookmarks', 'notes', 'answers',
     'lesson_progress', 'study_sessions', 'streaks'
   ]
   loop

@@ -102,6 +102,7 @@ export function buildSeedProgress(today = new Date()): ProgressState {
         updatedAt: isoDate(today),
       },
     },
+    answers: {},
     lessonProgress: {},
     sessions,
     streak: {
@@ -116,6 +117,7 @@ export const EMPTY_PROGRESS: ProgressState = {
   attempts: {},
   bookmarks: [],
   notes: {},
+  answers: {},
   lessonProgress: {},
   sessions: [],
   streak: { current: 0, longest: 0, lastActiveDate: "" },

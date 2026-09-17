@@ -14,6 +14,7 @@ import {
 } from "@/components/icons";
 import { cn } from "@/lib/utils";
 import { useProgress } from "@/lib/progress/context";
+import { questionAnswerRef, useRestoreAnswers } from "@/lib/progress/answers";
 
 /**
  * A design workbook rather than an essay. Each stage is answered before its
@@ -21,18 +22,42 @@ import { useProgress } from "@/lib/progress/context";
  * recognising one.
  */
 export function SystemDesignWorkspace({ question }: { question: Question }) {
-  const { recordAttempt } = useProgress();
+  const { recordAttempt, saveAnswer } = useProgress();
   const stages = question.designStages ?? [];
+
+  const refFor = (stageId: string) => questionAnswerRef(question.slug, stageId);
 
   const [open, setOpen] = useState<string | null>(stages[0]?.id ?? null);
   const [answers, setAnswers] = useState<Record<string, string>>({});
   const [revealed, setRevealed] = useState<Record<string, boolean>>({});
+
+  // Fourteen stages is a workbook, not a form — it gets returned to. Reopen
+  // it on the first stage still unanswered rather than back at the brief.
+  useRestoreAnswers(
+    stages.map((s) => refFor(s.id)),
+    (restored) => {
+      const bodies: Record<string, string> = {};
+      const seen: Record<string, boolean> = {};
+      for (const stage of stages) {
+        const body = restored[refFor(stage.id)]?.body;
+        if (!body) continue;
+        bodies[stage.id] = body;
+        seen[stage.id] = true;
+      }
+      if (Object.keys(bodies).length === 0) return;
+
+      setAnswers(bodies);
+      setRevealed(seen);
+      setOpen(stages.find((s) => !seen[s.id])?.id ?? null);
+    },
+  );
 
   const done = Object.keys(revealed).length;
   const percent = stages.length === 0 ? 0 : (done / stages.length) * 100;
 
   const revealStage = (id: string) => {
     setRevealed((prev) => ({ ...prev, [id]: true }));
+    saveAnswer(refFor(id), { body: answers[id] ?? "" });
     if (Object.keys(revealed).length + 1 >= stages.length) {
       recordAttempt(question.slug, { solved: true, correct: true });
     }
@@ -166,6 +191,7 @@ export function SystemDesignWorkspace({ question }: { question: Question }) {
                       ) : null}
 
                       <AiFeedback
+                        cacheRef={refFor(stage.id)}
                         questionTitle={question.title}
                         prompt={stage.prompt}
                         referenceAnswer={stage.reference.join(" ")}

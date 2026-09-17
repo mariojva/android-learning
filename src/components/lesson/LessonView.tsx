@@ -260,6 +260,7 @@ export function LessonView({ lesson }: { lesson: Lesson }) {
                     <div key={block.id} className="animate-fade-up">
                       <LessonBlockView
                         block={block}
+                        lessonId={lesson.id}
                         completed={completedBlocks.has(block.id)}
                         onComplete={() => handleComplete(block.id)}
                       />

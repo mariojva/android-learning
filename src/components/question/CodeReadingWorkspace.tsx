@@ -9,6 +9,7 @@ import { AiFeedback } from "./AiFeedback";
 import { IconEye, IconCheck, IconArrowRight, IconSpark } from "@/components/icons";
 import { keywordCoverage } from "@/lib/utils";
 import { useProgress } from "@/lib/progress/context";
+import { questionAnswerRef, useRestoreAnswers } from "@/lib/progress/answers";
 
 /**
  * Code reading is deliberately one question at a time. Showing all nine at
@@ -16,12 +17,43 @@ import { useProgress } from "@/lib/progress/context";
  */
 export function CodeReadingWorkspace({ question }: { question: Question }) {
   const prompts = question.readingPrompts ?? [];
-  const { recordAttempt } = useProgress();
+  const { recordAttempt, saveAnswer } = useProgress();
+
+  const refFor = (promptId: string) => questionAnswerRef(question.slug, promptId);
 
   const [index, setIndex] = useState(0);
   const [answers, setAnswers] = useState<Record<string, string>>({});
   const [revealed, setRevealed] = useState<Record<string, boolean>>({});
   const [finished, setFinished] = useState(false);
+
+  // Nine prompts is more than one sitting. Restoring what was written and
+  // resuming at the first prompt still unanswered is the difference between
+  // picking the exercise up and starting it over.
+  useRestoreAnswers(
+    prompts.map((p) => refFor(p.id)),
+    (restored) => {
+      const bodies: Record<string, string> = {};
+      const seen: Record<string, boolean> = {};
+      for (const prompt of prompts) {
+        const body = restored[refFor(prompt.id)]?.body;
+        if (!body) continue;
+        bodies[prompt.id] = body;
+        seen[prompt.id] = true;
+      }
+      if (Object.keys(bodies).length === 0) return;
+
+      setAnswers(bodies);
+      setRevealed(seen);
+
+      const next = prompts.findIndex((p) => !seen[p.id]);
+      if (next === -1) {
+        setIndex(prompts.length - 1);
+        setFinished(true);
+      } else {
+        setIndex(next);
+      }
+    },
+  );
 
   const current = prompts[index];
   const answeredCount = Object.keys(revealed).length;
@@ -30,6 +62,7 @@ export function CodeReadingWorkspace({ question }: { question: Question }) {
   const reveal = () => {
     if (!current) return;
     setRevealed((prev) => ({ ...prev, [current.id]: true }));
+    saveAnswer(refFor(current.id), { body: answers[current.id] ?? "" });
   };
 
   const next = () => {
@@ -141,6 +174,7 @@ export function CodeReadingWorkspace({ question }: { question: Question }) {
                     {current.expert}
                   </p>
                   <AiFeedback
+                    cacheRef={refFor(current.id)}
                     questionTitle={question.title}
                     prompt={current.question}
                     referenceAnswer={current.expert}

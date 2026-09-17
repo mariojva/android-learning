@@ -132,3 +132,24 @@ export function keywordCoverage(answer: string, keywords: string[]): string[] {
   const lower = answer.toLowerCase();
   return keywords.filter((k) => lower.includes(k.toLowerCase()));
 }
+
+/**
+ * "today" / "yesterday" / "3 days ago" — enough to tell a learner whether
+ * the answer on screen is this session's work or something they wrote
+ * last week, without spelling out a date nobody reads.
+ */
+export function relativeDay(isoDay: string, from = new Date()): string {
+  if (!isoDay) return "earlier";
+  const then = new Date(`${isoDay.slice(0, 10)}T00:00:00`);
+  if (Number.isNaN(then.getTime())) return "earlier";
+
+  const start = new Date(from.getFullYear(), from.getMonth(), from.getDate());
+  const days = Math.round((start.getTime() - then.getTime()) / 86_400_000);
+
+  if (days <= 0) return "today";
+  if (days === 1) return "yesterday";
+  if (days < 7) return `${days} days ago`;
+  if (days < 14) return "last week";
+  if (days < 60) return `${Math.floor(days / 7)} weeks ago`;
+  return `${Math.floor(days / 30)} months ago`;
+}

@@ -4,6 +4,7 @@ import type {
   Note,
   ProgressState,
   QuestionAttempt,
+  SavedAnswer,
   StudySession,
 } from "@/lib/types";
 import type { ProgressRepository } from "./repository";
@@ -38,7 +39,7 @@ export class SupabaseProgressRepository implements ProgressRepository {
   async load(): Promise<ProgressState | null> {
     const uid = this.userId;
 
-    const [attempts, bookmarks, notes, lessons, sessions] = await Promise.all([
+    const [attempts, bookmarks, notes, answers, lessons, sessions] = await Promise.all([
       this.supabase
         .from("question_attempts")
         .select(
@@ -47,6 +48,10 @@ export class SupabaseProgressRepository implements ProgressRepository {
         .eq("user_id", uid),
       this.supabase.from("bookmarks").select("ref, kind, created_at").eq("user_id", uid),
       this.supabase.from("notes").select("ref, body, updated_at").eq("user_id", uid),
+      this.supabase
+        .from("answers")
+        .select("ref, body, verdict, feedback, updated_at")
+        .eq("user_id", uid),
       this.supabase
         .from("lesson_progress")
         .select("lesson_id, completed_blocks, completed_at")
@@ -70,6 +75,7 @@ export class SupabaseProgressRepository implements ProgressRepository {
       attempts: {},
       bookmarks: [],
       notes: {},
+      answers: {},
       lessonProgress: {},
       sessions: [],
       streak: { current: 0, longest: 0, lastActiveDate: "" },
@@ -101,6 +107,29 @@ export class SupabaseProgressRepository implements ProgressRepository {
       state.notes[ref] = {
         ref,
         body: (row.body as string) ?? "",
+        updatedAt: toISODate(row.updated_at),
+      };
+    }
+
+    // Deliberately not fatal. `answers` arrived after the original schema, so
+    // a project that has not run the migration yet is missing the table --
+    // and losing every attempt, note and streak over a feature the account
+    // has never used would be a terrible trade. Saved answers simply stay
+    // empty until the table exists.
+    if (answers.error) {
+      console.warn(
+        `Saved answers unavailable (${answers.error.message}). ` +
+          "Run supabase/migrations/001_answers.sql to enable them.",
+      );
+    }
+
+    for (const row of (answers.data ?? []) as Row[]) {
+      const ref = row.ref as string;
+      state.answers[ref] = {
+        ref,
+        body: (row.body as string) ?? "",
+        verdict: (row.verdict as SavedAnswer["verdict"] | null) ?? undefined,
+        feedback: (row.feedback as string | null) ?? undefined,
         updatedAt: toISODate(row.updated_at),
       };
     }
@@ -235,6 +264,48 @@ export class SupabaseProgressRepository implements ProgressRepository {
       );
     }
 
+    /* --- answers --- */
+    const answerRows: Row[] = [];
+    for (const [ref, answer] of Object.entries(state.answers)) {
+      const before = previous?.answers[ref];
+      if (
+        !before ||
+        before.body !== answer.body ||
+        before.verdict !== answer.verdict ||
+        before.feedback !== answer.feedback
+      ) {
+        answerRows.push({
+          user_id: uid,
+          ref,
+          body: answer.body,
+          verdict: answer.verdict ?? null,
+          feedback: answer.feedback ?? null,
+          updated_at: new Date().toISOString(),
+        });
+      }
+    }
+    if (answerRows.length > 0) {
+      writes.push(
+        this.supabase
+          .from("answers")
+          .upsert(answerRows, { onConflict: "user_id,ref" })
+          .then(throwOnError("answers")),
+      );
+    }
+    const removedAnswers = previous
+      ? Object.keys(previous.answers).filter((ref) => !state.answers[ref])
+      : [];
+    if (removedAnswers.length > 0) {
+      writes.push(
+        this.supabase
+          .from("answers")
+          .delete()
+          .eq("user_id", uid)
+          .in("ref", removedAnswers)
+          .then(throwOnError("answers delete")),
+      );
+    }
+
     /* --- lesson progress --- */
     const lessonRows: Row[] = [];
     for (const [lessonId, entry] of Object.entries(state.lessonProgress)) {
@@ -346,6 +417,7 @@ export class SupabaseProgressRepository implements ProgressRepository {
       "question_attempts",
       "bookmarks",
       "notes",
+      "answers",
       "lesson_progress",
       "study_sessions",
       "streaks",

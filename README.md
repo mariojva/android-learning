@@ -126,12 +126,15 @@ src/
   data/           seeded content (questions, path, plan, lessons, profile)
   lib/
     types.ts      the domain model
+    ai/           the grading call (never the API key)
     auth/         session, profile, sign in/up/out
-    progress/     repository (local + Supabase), context, derived selectors
+    progress/     repository (local + Supabase), context, selectors, answer refs
     kotlin-runner.ts
     supabase/
     basePath.ts
 supabase/schema.sql
+supabase/migrations/            incremental SQL for existing projects
+supabase/functions/grade-answer the only place the Anthropic key lives
 ```
 
 Two boundaries are worth knowing about.
@@ -214,7 +217,7 @@ npx serve out          # or any static server
 ## Accounts (Supabase)
 
 1. Create a Supabase project.
-2. Run `supabase/schema.sql` in the SQL editor. It creates the seven tables, the
+2. Run `supabase/schema.sql` in the SQL editor. It creates the eight tables, the
    new-user trigger, and per-user RLS policies — every one of them
    `auth.uid() = user_id`.
 3. In **Authentication → URL Configuration**, set Site URL to
@@ -247,6 +250,69 @@ what the account already has.
 Writes are diffed against the last saved snapshot, so editing a note sends one
 row rather than your entire history, and the top bar shows Saving / Saved /
 Not saved rather than pretending writes always succeed.
+
+### Your answers are kept
+
+Every free-text prompt — lesson Explain and Predict blocks, code-reading
+questions, a debugging diagnosis, each system-design stage — saves what you
+wrote, under a ref like `lesson:day-1#warmup-explain` or
+`question:<slug>#<stage>`. Come back and the box holds your own words, the
+reference is already open, and a dated badge says when you wrote it.
+
+That matters more than it sounds. A badge reading "answered earlier" above an
+empty textarea tells you a row exists in a table; it does not tell you whether
+you understood anything. The point of writing an answer before reading the
+reference is being able to compare the two — which requires the answer still
+being there.
+
+Multi-part exercises reopen at the first part you have *not* answered, so a
+fourteen-stage design workbook is something you return to rather than restart.
+
+Restoring happens once, when the store hydrates. Deliberately not "whenever
+the box is empty" — that version types your old answer back in the moment you
+clear it to start over.
+
+### AI feedback
+
+Optional, off unless you set it up. Where the reference answer is revealed,
+signed-in users get a **Get AI feedback** button: your answer and the
+reference go to Claude, which returns a verdict — strong, partial, off-track —
+and a short reason. It is the judgement the keyword-matching cannot make;
+`keywordCoverage` can tell you that you said "cold flow", not whether you
+understood it.
+
+The grade is cached with the answer, so reopening a lesson replays a verdict
+you already paid for. It is only replayed while the answer it judged is still
+the answer on screen — rewrite your answer and the stale verdict stops being
+shown rather than quietly misrepresenting new work.
+
+Setting it up:
+
+1. Create an API key at [console.anthropic.com](https://console.anthropic.com)
+   and fund it. Note that a ChatGPT/Claude *subscription* is not API access;
+   these are billed separately.
+2. Deploy `supabase/functions/grade-answer` — Supabase Dashboard → Edge
+   Functions → a function named exactly `grade-answer`, or
+   `supabase functions deploy grade-answer`.
+3. Add `ANTHROPIC_API_KEY` under Edge Functions → Secrets.
+4. If your project predates the `answers` table, run
+   `supabase/migrations/001_answers.sql`.
+
+**Why an Edge Function and not a fetch from the browser.** This site is a
+static export with no server of its own, and an API key in the bundle is a key
+anyone can read and spend. The function is the server: it holds the key, and
+it resolves an actual signed-in user rather than accepting any valid JWT —
+the anon key is a valid JWT too, so checking merely that one was present would
+leave the door open to anyone who finds the project URL.
+
+Cost is not really a consideration at one user. Haiku runs about a third of a
+cent per grade; fifty answers a day is a few dollars a month, and the cache
+means re-reading is free.
+
+A missing `answers` table is survivable by design: loading it is not fatal, so
+a project that has not run the migration warns to the console and carries on
+with answers empty, rather than taking every attempt, note and streak down
+with it.
 
 ### Forgotten passwords
 
@@ -307,6 +373,7 @@ phones.
 
 - Real Kotlin execution (the boundary exists; the sandbox does not)
 - Email change (Supabase supports it; no UI yet)
+- AI feedback on the coding and quiz formats (both already grade themselves)
 - Lessons for days 2–84 (Day 1 is complete and is the template)
 - Mock interview mode with a timer
 

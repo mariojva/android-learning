@@ -10,7 +10,7 @@ import {
   useState,
   type ReactNode,
 } from "react";
-import type { ProgressState } from "@/lib/types";
+import type { AnswerVerdict, ProgressState, SavedAnswer } from "@/lib/types";
 import { buildSeedProgress, EMPTY_PROGRESS } from "@/data/seedProgress";
 import {
   LocalProgressRepository,
@@ -34,6 +34,13 @@ interface RecordAttemptInput {
 export type ProgressMode = "local" | "account";
 export type SyncState = "idle" | "saving" | "saved" | "error";
 
+/** A partial update -- only the fields a given call site actually knows. */
+export interface SaveAnswerInput {
+  body?: string;
+  verdict?: AnswerVerdict;
+  feedback?: string;
+}
+
 interface ProgressContextValue {
   progress: ProgressState;
   /** Where progress is being kept right now. */
@@ -48,6 +55,8 @@ interface ProgressContextValue {
   recordAttempt(slug: string, input: RecordAttemptInput): void;
   toggleBookmark(ref: string, kind: "question" | "lesson"): void;
   setNote(ref: string, body: string): void;
+  /** Store (or update) what the learner wrote for a free-text prompt. */
+  saveAnswer(ref: string, patch: SaveAnswerInput): void;
   completeLessonBlock(lessonId: string, blockId: string): void;
   resetLesson(lessonId: string): void;
   addStudyMinutes(minutes: number): void;
@@ -209,6 +218,33 @@ export function ProgressProvider({ children }: { children: ReactNode }) {
     });
   }, []);
 
+  /**
+   * Merges rather than replaces: the body is written when the learner
+   * commits, and a verdict lands later when they ask to be graded. One
+   * call site should not wipe the other's field.
+   */
+  const saveAnswer = useCallback((ref: string, patch: SaveAnswerInput) => {
+    setProgress((prev) => {
+      const before = prev.answers[ref];
+      const next: SavedAnswer = {
+        ref,
+        body: patch.body ?? before?.body ?? "",
+        verdict: patch.verdict ?? before?.verdict,
+        feedback: patch.feedback ?? before?.feedback,
+        updatedAt: isoDate(new Date()),
+      };
+      if (
+        before &&
+        before.body === next.body &&
+        before.verdict === next.verdict &&
+        before.feedback === next.feedback
+      ) {
+        return prev;
+      }
+      return { ...prev, answers: { ...prev.answers, [ref]: next } };
+    });
+  }, []);
+
   const completeLessonBlock = useCallback((lessonId: string, blockId: string) => {
     setProgress((prev) => {
       const entry = prev.lessonProgress[lessonId] ?? { completedBlocks: [] };
@@ -288,6 +324,13 @@ export function ProgressProvider({ children }: { children: ReactNode }) {
         if (!notes[ref]) notes[ref] = note;
       }
 
+      // Same rule as notes: the account wins, so importing never overwrites
+      // an answer you wrote while signed in with an older local one.
+      const answers = { ...prev.answers };
+      for (const [ref, answer] of Object.entries(local.answers ?? {})) {
+        if (!answers[ref]) answers[ref] = answer;
+      }
+
       const lessonProgress = { ...prev.lessonProgress };
       for (const [id, entry] of Object.entries(local.lessonProgress ?? {})) {
         const existing = lessonProgress[id];
@@ -310,7 +353,15 @@ export function ProgressProvider({ children }: { children: ReactNode }) {
         .map(([date, minutes]) => ({ date, minutes }))
         .sort((a, b) => a.date.localeCompare(b.date));
 
-      return { ...prev, attempts, bookmarks, notes, lessonProgress, sessions };
+      return {
+        ...prev,
+        attempts,
+        bookmarks,
+        notes,
+        answers,
+        lessonProgress,
+        sessions,
+      };
     });
 
     return { imported };
@@ -327,6 +378,7 @@ export function ProgressProvider({ children }: { children: ReactNode }) {
       recordAttempt,
       toggleBookmark,
       setNote,
+      saveAnswer,
       completeLessonBlock,
       resetLesson,
       addStudyMinutes,
@@ -344,6 +396,7 @@ export function ProgressProvider({ children }: { children: ReactNode }) {
       recordAttempt,
       toggleBookmark,
       setNote,
+      saveAnswer,
       completeLessonBlock,
       resetLesson,
       addStudyMinutes,
@@ -372,6 +425,7 @@ function normalise(stored: Partial<ProgressState>): ProgressState {
     attempts: stored.attempts ?? {},
     bookmarks: stored.bookmarks ?? [],
     notes: stored.notes ?? {},
+    answers: stored.answers ?? {},
     lessonProgress: stored.lessonProgress ?? {},
     sessions: stored.sessions ?? [],
     streak: stored.streak ?? { current: 0, longest: 0, lastActiveDate: "" },

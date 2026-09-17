@@ -15,11 +15,32 @@ import {
 } from "@/components/icons";
 import { cn } from "@/lib/utils";
 
-type Mode = "sign-in" | "sign-up";
+type Mode = "sign-in" | "sign-up" | "forgot";
+
+const COPY: Record<Mode, { title: string; blurb: string; action: string }> = {
+  "sign-in": {
+    title: "Sign in",
+    blurb: "Your progress, streak and notes follow you across devices.",
+    action: "Sign in",
+  },
+  "sign-up": {
+    title: "Create your account",
+    blurb:
+      "A new account starts empty — every number in it will be one you earned.",
+    action: "Create account",
+  },
+  forgot: {
+    title: "Reset your password",
+    blurb:
+      "Give us the address you signed up with and we will send a link that lets you set a new password.",
+    action: "Send reset link",
+  },
+};
 
 export default function AuthPage() {
   const router = useRouter();
-  const { user, loading, configured, signIn, signUp } = useAuth();
+  const { user, loading, configured, recovering, signIn, signUp, requestPasswordReset } =
+    useAuth();
 
   const [mode, setMode] = useState<Mode>("sign-in");
   const [email, setEmail] = useState("");
@@ -28,16 +49,30 @@ export default function AuthPage() {
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [confirmationSent, setConfirmationSent] = useState(false);
+  const [resetSent, setResetSent] = useState(false);
 
-  // Already signed in — nothing to do here.
+  // Already signed in — nothing to do here. A recovery session is the
+  // exception: the user is technically signed in but is on their way to
+  // /auth/reset/, and bouncing them home would strand the reset.
   useEffect(() => {
-    if (!loading && user) router.replace("/");
-  }, [loading, user, router]);
+    if (!loading && user && !recovering) router.replace("/");
+  }, [loading, user, recovering, router]);
 
   const submit = async (event: React.FormEvent) => {
     event.preventDefault();
     setError(null);
     setBusy(true);
+
+    if (mode === "forgot") {
+      const result = await requestPasswordReset(email.trim());
+      setBusy(false);
+      if (result.error) {
+        setError(result.error);
+        return;
+      }
+      setResetSent(true);
+      return;
+    }
 
     const result =
       mode === "sign-in"
@@ -55,6 +90,12 @@ export default function AuthPage() {
       return;
     }
     router.replace("/");
+  };
+
+  const goTo = (next: Mode) => {
+    setMode(next);
+    setError(null);
+    setPassword("");
   };
 
   return (
@@ -85,6 +126,35 @@ export default function AuthPage() {
               <IconArrowRight size={12} />
             </Link>
           </Card>
+        ) : resetSent ? (
+          <Card className="p-6 text-center">
+            <span className="mx-auto mb-4 flex h-11 w-11 items-center justify-center rounded-full bg-done/15 text-done">
+              <IconCheck size={20} className="animate-check" />
+            </span>
+            <h1 className="text-[17px] font-semibold tracking-tight text-fg">
+              Check your email
+            </h1>
+            <p className="mt-2.5 text-[13.5px] leading-relaxed text-muted">
+              If an account exists for{" "}
+              <span className="text-fg-dim">{email}</span>, a reset link is on
+              its way. Open it and you can set a new password.
+            </p>
+            <p className="mt-3 text-[12.5px] leading-relaxed text-subtle">
+              The link is single-use and expires after an hour. Nothing changes
+              until you set the new password.
+            </p>
+            <Button
+              tone="ghost"
+              size="sm"
+              className="mt-5"
+              onClick={() => {
+                setResetSent(false);
+                goTo("sign-in");
+              }}
+            >
+              Back to sign in
+            </Button>
+          </Card>
         ) : confirmationSent ? (
           <Card className="p-6 text-center">
             <span className="mx-auto mb-4 flex h-11 w-11 items-center justify-center rounded-full bg-done/15 text-done">
@@ -113,12 +183,10 @@ export default function AuthPage() {
         ) : (
           <Card className="p-6">
             <h1 className="text-[19px] font-semibold tracking-tight text-fg">
-              {mode === "sign-in" ? "Sign in" : "Create your account"}
+              {COPY[mode].title}
             </h1>
             <p className="mt-2 text-[13px] leading-relaxed text-muted">
-              {mode === "sign-in"
-                ? "Your progress, streak and notes follow you across devices."
-                : "A new account starts empty — every number in it will be one you earned."}
+              {COPY[mode].blurb}
             </p>
 
             <form onSubmit={submit} className="mt-6 space-y-3.5">
@@ -132,31 +200,42 @@ export default function AuthPage() {
                 required
               />
 
-              <div>
-                <div className="mono-label mb-2 flex items-center justify-between text-subtle">
-                  <span>Password</span>
-                  <button
-                    type="button"
-                    onClick={() => setShowPassword((v) => !v)}
-                    className="inline-flex items-center gap-1 text-faint transition-colors hover:text-muted"
-                  >
-                    <IconEye size={11} />
-                    {showPassword ? "Hide" : "Show"}
-                  </button>
+              {mode !== "forgot" ? (
+                <div>
+                  <div className="mono-label mb-2 flex items-center justify-between text-subtle">
+                    <span>Password</span>
+                    <button
+                      type="button"
+                      onClick={() => setShowPassword((v) => !v)}
+                      className="inline-flex items-center gap-1 text-faint transition-colors hover:text-muted"
+                    >
+                      <IconEye size={11} />
+                      {showPassword ? "Hide" : "Show"}
+                    </button>
+                  </div>
+                  <input
+                    type={showPassword ? "text" : "password"}
+                    value={password}
+                    onChange={(e) => setPassword(e.target.value)}
+                    autoComplete={
+                      mode === "sign-in" ? "current-password" : "new-password"
+                    }
+                    required
+                    minLength={6}
+                    placeholder={mode === "sign-up" ? "At least 6 characters" : "••••••••"}
+                    className="h-10 w-full rounded-lg border border-line bg-bg-raised px-3 text-[13.5px] text-fg placeholder:text-faint focus:border-line-strong focus:outline-none"
+                  />
+                  {mode === "sign-in" ? (
+                    <button
+                      type="button"
+                      onClick={() => goTo("forgot")}
+                      className="mono-meta mt-2 text-faint transition-colors hover:text-accent"
+                    >
+                      Forgot your password?
+                    </button>
+                  ) : null}
                 </div>
-                <input
-                  type={showPassword ? "text" : "password"}
-                  value={password}
-                  onChange={(e) => setPassword(e.target.value)}
-                  autoComplete={
-                    mode === "sign-in" ? "current-password" : "new-password"
-                  }
-                  required
-                  minLength={6}
-                  placeholder={mode === "sign-up" ? "At least 6 characters" : "••••••••"}
-                  className="h-10 w-full rounded-lg border border-line bg-bg-raised px-3 text-[13.5px] text-fg placeholder:text-faint focus:border-line-strong focus:outline-none"
-                />
-              </div>
+              ) : null}
 
               {error ? (
                 <div className="animate-fade-in flex items-start gap-2.5 rounded-lg border border-hard/25 bg-hard/[0.06] p-3">
@@ -180,7 +259,7 @@ export default function AuthPage() {
                 ) : (
                   <>
                     <IconLock size={14} />
-                    {mode === "sign-in" ? "Sign in" : "Create account"}
+                    {COPY[mode].action}
                   </>
                 )}
               </Button>
@@ -189,15 +268,14 @@ export default function AuthPage() {
             <div className="mt-5 border-t border-line pt-4 text-center">
               <button
                 type="button"
-                onClick={() => {
-                  setMode(mode === "sign-in" ? "sign-up" : "sign-in");
-                  setError(null);
-                }}
+                onClick={() => goTo(mode === "sign-in" ? "sign-up" : "sign-in")}
                 className="text-[13px] text-muted transition-colors hover:text-accent"
               >
                 {mode === "sign-in"
                   ? "No account yet? Create one"
-                  : "Already have an account? Sign in"}
+                  : mode === "sign-up"
+                    ? "Already have an account? Sign in"
+                    : "Remembered it? Back to sign in"}
               </button>
             </div>
           </Card>

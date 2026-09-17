@@ -35,6 +35,12 @@ interface AuthContextValue {
   loading: boolean;
   /** False when NEXT_PUBLIC_SUPABASE_* are absent; the app stays local-only. */
   configured: boolean;
+  /**
+   * True from the moment a recovery link is opened until a new password is
+   * set. Supabase signs the user in to let them change it, so without this
+   * flag the reset page cannot tell a recovery from an ordinary session.
+   */
+  recovering: boolean;
   signIn(email: string, password: string): Promise<{ error?: string }>;
   signUp(
     email: string,
@@ -42,6 +48,10 @@ interface AuthContextValue {
   ): Promise<{ error?: string; needsConfirmation?: boolean }>;
   signOut(): Promise<void>;
   updateProfile(patch: Partial<AccountProfile>): Promise<{ error?: string }>;
+  /** Sends the recovery email. Resolves the same way whether or not the
+   *  address has an account — see the note at the implementation. */
+  requestPasswordReset(email: string): Promise<{ error?: string }>;
+  updatePassword(password: string): Promise<{ error?: string }>;
 }
 
 const AuthContext = createContext<AuthContextValue | null>(null);
@@ -52,6 +62,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const [session, setSession] = useState<Session | null>(null);
   const [profile, setProfile] = useState<AccountProfile | null>(null);
   const [loading, setLoading] = useState(configured);
+  const [recovering, setRecovering] = useState(false);
 
   useEffect(() => {
     if (!configured) {
@@ -78,7 +89,11 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       });
 
     const { data: subscription } = supabase.auth.onAuthStateChange(
-      (_event, next) => {
+      (event, next) => {
+        // Opening a recovery link signs the user in so they can set a new
+        // password. Recording the event is the only way the reset page can
+        // distinguish that from someone who was already signed in.
+        if (event === "PASSWORD_RECOVERY") setRecovering(true);
         setSession(next);
         setLoading(false);
       },
@@ -183,6 +198,38 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     await supabase.auth.signOut();
     setSession(null);
     setProfile(null);
+    setRecovering(false);
+  }, []);
+
+  /**
+   * Note what this deliberately does not do: report whether the address has
+   * an account. Supabase returns success either way, and the UI says "if an
+   * account exists" for the same reason — a reset form that distinguishes
+   * the two is an account-enumeration oracle for anyone who asks it politely.
+   */
+  const requestPasswordReset = useCallback(async (email: string) => {
+    const supabase = getSupabaseClient();
+    if (!supabase) return { error: "Supabase is not configured." };
+
+    const { error } = await supabase.auth.resetPasswordForEmail(email, {
+      // The base path matters here for the same reason it does on sign-up:
+      // a project page is mounted at /<repo>/, and origin alone 404s.
+      redirectTo:
+        typeof window !== "undefined" ? absoluteUrl("/auth/reset/") : undefined,
+    });
+
+    return error ? { error: describeAuthError(error.message) } : {};
+  }, []);
+
+  const updatePassword = useCallback(async (password: string) => {
+    const supabase = getSupabaseClient();
+    if (!supabase) return { error: "Supabase is not configured." };
+
+    const { error } = await supabase.auth.updateUser({ password });
+    if (error) return { error: describeAuthError(error.message) };
+
+    setRecovering(false);
+    return {};
   }, []);
 
   const updateProfile = useCallback(
@@ -215,12 +262,28 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       profile,
       loading,
       configured,
+      recovering,
       signIn,
       signUp,
       signOut,
       updateProfile,
+      requestPasswordReset,
+      updatePassword,
     }),
-    [user, session, profile, loading, configured, signIn, signUp, signOut, updateProfile],
+    [
+      user,
+      session,
+      profile,
+      loading,
+      configured,
+      recovering,
+      signIn,
+      signUp,
+      signOut,
+      updateProfile,
+      requestPasswordReset,
+      updatePassword,
+    ],
   );
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;

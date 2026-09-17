@@ -31,12 +31,43 @@ export default function SettingsPage() {
     loadDemoHistory,
     importLocalProgress,
   } = useProgress();
-  const { user, profile, configured, signOut, updateProfile } = useAuth();
+  const { user, profile, configured, signOut, updateProfile, updatePassword } =
+    useAuth();
 
   const [confirming, setConfirming] = useState(false);
   const [importResult, setImportResult] = useState<string | null>(null);
   const [nameDraft, setNameDraft] = useState<string | null>(null);
   const [savingName, setSavingName] = useState(false);
+
+  const [newPassword, setNewPassword] = useState("");
+  const [confirmPassword, setConfirmPassword] = useState("");
+  const [savingPassword, setSavingPassword] = useState(false);
+  const [passwordNote, setPasswordNote] = useState<string | null>(null);
+  const [passwordFailed, setPasswordFailed] = useState(false);
+
+  const savePassword = async () => {
+    setPasswordNote(null);
+    setPasswordFailed(false);
+
+    if (newPassword !== confirmPassword) {
+      setPasswordFailed(true);
+      setPasswordNote("The two passwords do not match.");
+      return;
+    }
+
+    setSavingPassword(true);
+    const result = await updatePassword(newPassword);
+    setSavingPassword(false);
+
+    if (result.error) {
+      setPasswordFailed(true);
+      setPasswordNote(result.error);
+      return;
+    }
+    setNewPassword("");
+    setConfirmPassword("");
+    setPasswordNote("Password changed.");
+  };
 
   const runImport = async () => {
     const result = await importLocalProgress();
@@ -117,6 +148,51 @@ export default function SettingsPage() {
                 >
                   {savingName ? "Saving…" : "Save"}
                 </Button>
+              </div>
+
+              <Divider className="my-5" />
+
+              <div className="mono-label mb-2 text-subtle">Change password</div>
+              <div className="space-y-2">
+                <input
+                  type="password"
+                  value={newPassword}
+                  onChange={(e) => setNewPassword(e.target.value)}
+                  autoComplete="new-password"
+                  minLength={6}
+                  placeholder="New password — at least 6 characters"
+                  className="h-9 w-full rounded-lg border border-line bg-bg-raised px-3 text-[13px] text-fg placeholder:text-faint focus:border-line-strong focus:outline-none"
+                />
+                <input
+                  type="password"
+                  value={confirmPassword}
+                  onChange={(e) => setConfirmPassword(e.target.value)}
+                  autoComplete="new-password"
+                  minLength={6}
+                  placeholder="Confirm it"
+                  className="h-9 w-full rounded-lg border border-line bg-bg-raised px-3 text-[13px] text-fg placeholder:text-faint focus:border-line-strong focus:outline-none"
+                />
+                <div className="flex flex-wrap items-center gap-2">
+                  <Button
+                    tone="secondary"
+                    size="sm"
+                    disabled={newPassword.length < 6 || savingPassword}
+                    onClick={() => void savePassword()}
+                  >
+                    {savingPassword ? "Saving…" : "Change password"}
+                  </Button>
+                  {passwordNote ? (
+                    <span
+                      className={
+                        passwordFailed
+                          ? "text-[12.5px] text-hard"
+                          : "text-[12.5px] text-accent"
+                      }
+                    >
+                      {passwordNote}
+                    </span>
+                  ) : null}
+                </div>
               </div>
 
               <Divider className="my-5" />

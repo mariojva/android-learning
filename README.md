@@ -248,6 +248,35 @@ Writes are diffed against the last saved snapshot, so editing a note sends one
 row rather than your entire history, and the top bar shows Saving / Saved /
 Not saved rather than pretending writes always succeed.
 
+### Forgotten passwords
+
+`/auth` offers **Forgot your password?**, which sends a recovery link; the link
+lands on `/auth/reset/`, where a new password is set. Supabase puts its tokens in
+the URL *fragment*, which never reaches a server — which is why this works on a
+static host with no backend of ours.
+
+Two things this depends on:
+
+- `/auth/reset/` must be in **Authentication → URL Configuration → Redirect
+  URLs**, for every origin you use. `http://localhost:3000/auth/reset/` for
+  development, and the deployed equivalent — on a project page that includes
+  the base path, e.g. `https://<owner>.github.io/<repo>/auth/reset/`. A
+  wildcard such as `http://localhost:3000/**` covers the local case.
+- Email has to actually send. Supabase's built-in SMTP is rate-limited to a
+  handful of messages an hour and is not meant for production; wire up your own
+  SMTP provider under **Project Settings → Auth → SMTP** before relying on it.
+
+The form reports the same thing whether or not the address has an account. That
+is deliberate: a reset form that distinguishes the two tells anyone who asks
+which email addresses are registered.
+
+Signed in, **Settings → Account** has a change-password field for the ordinary
+case where you still know the current one.
+
+If you are locked out and email is not working yet, the fastest route is the
+Supabase dashboard: **Authentication → Users**, find yourself, and use the row
+menu to send a recovery link or set a password directly.
+
 ### No email round trip
 
 Supabase's *Confirm email* setting (Authentication → Providers → Email) decides
@@ -277,7 +306,7 @@ phones.
 ## Deliberately not done yet
 
 - Real Kotlin execution (the boundary exists; the sandbox does not)
-- Password reset and email change (Supabase supports both; no UI yet)
+- Email change (Supabase supports it; no UI yet)
 - Lessons for days 2–84 (Day 1 is complete and is the template)
 - Mock interview mode with a timer
 

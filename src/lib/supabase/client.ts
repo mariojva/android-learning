@@ -75,5 +75,17 @@ export function describeAuthError(message: string): string {
   if (m.includes("rate limit") || m.includes("too many")) {
     return "Too many attempts. Wait a minute and try again.";
   }
+  if (m.includes("new password should be different")) {
+    return "That is already your password. Choose a different one.";
+  }
+  if (m.includes("auth session missing") || m.includes("session_not_found")) {
+    return "This link has expired or has already been used. Request a new one.";
+  }
+  if (m.includes("token has expired") || m.includes("otp_expired")) {
+    return "This reset link has expired. Request a new one.";
+  }
+  if (m.includes("same_password")) {
+    return "That is already your password. Choose a different one.";
+  }
   return message;
 }

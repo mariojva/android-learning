@@ -4,6 +4,7 @@ import { useState } from "react";
 import type { Question } from "@/lib/types";
 import { Card, Button, Badge, ProgressBar } from "@/components/ui/primitives";
 import { SolutionPanel } from "./SolutionPanel";
+import { AiFeedback } from "./AiFeedback";
 import {
   IconCheck,
   IconEye,
@@ -163,6 +164,13 @@ export function SystemDesignWorkspace({ question }: { question: Question }) {
                           </ul>
                         </div>
                       ) : null}
+
+                      <AiFeedback
+                        questionTitle={question.title}
+                        prompt={stage.prompt}
+                        referenceAnswer={stage.reference.join(" ")}
+                        userAnswer={answer}
+                      />
 
                       {i < stages.length - 1 ? (
                         <Button

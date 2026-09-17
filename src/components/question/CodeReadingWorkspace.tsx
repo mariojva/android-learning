@@ -5,6 +5,7 @@ import type { Question } from "@/lib/types";
 import { CodePane } from "@/components/ui/code";
 import { Card, Button, Badge, ProgressBar } from "@/components/ui/primitives";
 import { SolutionPanel } from "./SolutionPanel";
+import { AiFeedback } from "./AiFeedback";
 import { IconEye, IconCheck, IconArrowRight, IconSpark } from "@/components/icons";
 import { keywordCoverage } from "@/lib/utils";
 import { useProgress } from "@/lib/progress/context";
@@ -139,6 +140,12 @@ export function CodeReadingWorkspace({ question }: { question: Question }) {
                   <p className="whitespace-pre-line text-[13.5px] leading-relaxed text-fg-dim">
                     {current.expert}
                   </p>
+                  <AiFeedback
+                    questionTitle={question.title}
+                    prompt={current.question}
+                    referenceAnswer={current.expert}
+                    userAnswer={answers[current.id] ?? ""}
+                  />
                 </div>
 
                 <Button tone="secondary" size="sm" onClick={next}>

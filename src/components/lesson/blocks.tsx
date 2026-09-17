@@ -18,6 +18,7 @@ import {
   IconSpark,
 } from "@/components/icons";
 import { cn, looseMatch, keywordCoverage } from "@/lib/utils";
+import { AiFeedback } from "@/components/question/AiFeedback";
 
 export function LessonBlockView({
   block,
@@ -181,6 +182,14 @@ function Predict({
           <p className="whitespace-pre-line text-[13.5px] leading-relaxed text-fg-dim">
             {block.answer}
           </p>
+          <AiFeedback
+            questionTitle={block.title}
+            prompt={predictPrompt(block)}
+            referenceAnswer={[block.expected, block.answer]
+              .filter(Boolean)
+              .join("\n\n")}
+            userAnswer={value}
+          />
         </div>
       ) : null}
 
@@ -192,6 +201,19 @@ function Predict({
       ) : null}
     </Card>
   );
+}
+
+/**
+ * `expected` is matched literally, so a learner who is conceptually right
+ * but phrased it differently gets told "not quite". The prompt carries the
+ * code so the grader can judge the reasoning rather than the string.
+ */
+function predictPrompt(block: LessonBlock): string {
+  const parts = [block.question ?? ""];
+  if (block.code?.code) {
+    parts.push(`Code:\n${block.code.code}`);
+  }
+  return parts.filter(Boolean).join("\n\n");
 }
 
 /* ------------------------------ Explain ---------------------------- */
@@ -289,11 +311,30 @@ function Explain({
             <p className="whitespace-pre-line text-[13.5px] leading-relaxed text-fg-dim">
               {block.answer}
             </p>
+            <AiFeedback
+              questionTitle={block.title}
+              prompt={explainPrompt(block)}
+              referenceAnswer={block.answer ?? ""}
+              userAnswer={value}
+            />
           </div>
         </div>
       )}
     </Card>
   );
+}
+
+/**
+ * A lesson block's question often leans on the code sitting directly above
+ * it ("what is the difference between a and b?"), so the code has to travel
+ * with the prompt or the grader is reading a riddle.
+ */
+function explainPrompt(block: LessonBlock): string {
+  const parts = [block.question ?? ""];
+  if (block.code?.code) {
+    parts.push(`Code under discussion:\n${block.code.code}`);
+  }
+  return parts.filter(Boolean).join("\n\n");
 }
 
 /* ------------------------------- Quiz ------------------------------ */

@@ -5,6 +5,7 @@ import type { Question } from "@/lib/types";
 import { CodePane } from "@/components/ui/code";
 import { Card, Button, Badge, Divider } from "@/components/ui/primitives";
 import { SolutionPanel } from "./SolutionPanel";
+import { AiFeedback } from "./AiFeedback";
 import {
   IconBug,
   IconLightbulb,
@@ -220,6 +221,12 @@ export function DebuggingWorkspace({ question }: { question: Question }) {
                   its upstream once per collector&rdquo; is a mechanism — and
                   mechanisms are what transfer to the next bug.
                 </p>
+                <AiFeedback
+                  questionTitle={question.title}
+                  prompt={question.symptom ?? ""}
+                  referenceAnswer={question.rootCause ?? ""}
+                  userAnswer={diagnosis}
+                />
               </Card>
             ) : null}
 

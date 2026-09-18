@@ -264,6 +264,39 @@ export type LessonBlockKind =
   | "implement"
   | "quiz";
 
+export interface PipelineStage {
+  label: string;
+  /** The one-line version, for someone who already knows the term. */
+  caption?: string;
+  /** Glossary entry id — what the stage expands into for everyone else. */
+  term?: string;
+}
+
+/**
+ * A term explained for someone who has shipped features without ever being
+ * told why the layers exist. The three required fields are the whole point:
+ * a definition that says only what a thing *is* leaves you unable to decide
+ * whether you need it.
+ */
+export interface GlossaryEntry {
+  id: string;
+  term: string;
+  /** Spelled out, where an acronym hides the meaning. */
+  expansion?: string;
+  /** What it is, in plain words. */
+  what: string[];
+  /** The problem that forces it to exist. */
+  why: string[];
+  /** What concretely breaks if you delete it. */
+  breaks: string;
+  /** Deliberately a different domain per term, so the idea travels. */
+  example?: CodeBlock;
+  /** The size below which this layer is ceremony rather than architecture. */
+  overkillWhen?: string;
+  /** Other entries worth reading next. */
+  related?: string[];
+}
+
 export interface LessonBlock {
   id: string;
   kind: LessonBlockKind;
@@ -287,7 +320,7 @@ export interface LessonBlock {
   /** implement — links to a question in the bank. */
   questionSlug?: string;
   /** pipeline / diagram payloads */
-  stages?: { label: string; caption?: string }[];
+  stages?: PipelineStage[];
   steps?: { label: string; items: string[] }[];
 }
 

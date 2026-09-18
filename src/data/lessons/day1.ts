@@ -99,7 +99,7 @@ users.add("Jordan")`,
           title: "The sentence to remember",
           body: [
             "`val` means the reference cannot be reassigned.",
-            "It does **not** mean the referenced object is immutable.",
+            "It does **not** mean the referenced object is immutable — [[read-only-vs-immutable|read-only is not the same as immutable]].",
             "Mutability is a property of the type on the right-hand side. Immutability is a property you have to choose.",
           ],
         },
@@ -283,7 +283,7 @@ val name = admin?.name ?: "No admin assigned"
           tone: "insight",
           title: "The rule for today",
           body: [
-            "Pick the operator whose **return type** is the shape you need, then order the chain so the cheapest filters run first.",
+            "Pick the operator whose **return type** is the shape you need, then order the chain so the cheapest filters run first. On a long collection that ordering is the difference [[lazy-evaluation|lazy evaluation]] makes.",
             "If you cannot say what type comes out of each stage, you do not yet understand the chain — and neither will the next reader.",
           ],
         },
@@ -376,8 +376,35 @@ names.mapNotNull { it?.uppercase() }`,
         {
           id: "m-intro",
           kind: "prose",
+          title: "Start with the problem, not the diagram",
           body: [
-            "Everything you just practised exists in Android for one reason: data arrives in the shape a server chose, and it has to reach the screen in the shape the screen needs. Every arrow below is a transformation you now know how to write.",
+            "Architecture diagrams are usually shown as a finished thing: seven boxes, an arrow between each. That is the answer without the question, which is why they are so easy to nod along to and so hard to actually use.",
+            "So here is the question. Data leaves a server in whatever shape the backend team chose. It has to arrive on screen in whatever shape the screen needs. Those two shapes are different, they are decided by different people, and they change at different times — the server changes when the backend ships, the screen changes when your product manager has an idea.",
+            "Every box below is a place where somebody decided to absorb one of those changes so it would stop rippling through everything else. That is all architecture is here: a set of decisions about where change is allowed to stop.",
+          ],
+        },
+        {
+          id: "m-naive",
+          kind: "code",
+          title: "First, the version with no layers at all",
+          code: {
+            language: "kotlin",
+            code: `@Composable
+fun ProfileScreen(userId: String) {
+    var json by remember { mutableStateOf<JSONObject?>(null) }
+
+    LaunchedEffect(userId) {
+        json = JSONObject(URL("https://api.example/u/$userId").readText())
+    }
+
+    // Reading the server's field names, directly, in the UI.
+    Text(json?.optString("usr_nm") ?: "")
+    Text(if (json?.optInt("is_prem") == 1) "Premium" else "Free")
+}`,
+          },
+          body: [
+            "This works. On one screen, on a good network, for exactly as long as nothing changes. It is worth taking seriously rather than dismissing, because every layer that follows earns its place by fixing something specific that is wrong here — and if you cannot name what it fixes, you do not need it yet.",
+            "Three things are wrong. The screen knows the server's field names, so a backend rename is a UI change. Rotating the phone refetches, because the data lives in the composable. And there is nowhere to put the answer to 'what if we are offline' that is not inside this function.",
           ],
         },
         {
@@ -385,13 +412,47 @@ names.mapNotNull { it?.uppercase() }`,
           kind: "pipeline",
           title: "The pipeline",
           stages: [
-            { label: "API", caption: "JSON over HTTP" },
-            { label: "DTO", caption: "mirrors the server's schema exactly" },
-            { label: "Repository", caption: "decides where data comes from" },
-            { label: "Domain Model", caption: "what the feature means" },
-            { label: "ViewModel", caption: "owns screen state" },
-            { label: "UiState", caption: "exactly what the screen renders" },
-            { label: "Compose", caption: "draws it" },
+            { label: "API", caption: "JSON over HTTP", term: "api" },
+            {
+              label: "DTO",
+              caption: "catches the server's shape, exactly as it is",
+              term: "dto",
+            },
+            {
+              label: "Repository",
+              caption: "decides where data comes from",
+              term: "repository",
+            },
+            {
+              label: "Domain Model",
+              caption: "what the feature means",
+              term: "domain-model",
+            },
+            {
+              label: "ViewModel",
+              caption: "owns screen state, survives rotation",
+              term: "viewmodel",
+            },
+            {
+              label: "UiState",
+              caption: "exactly what the screen renders",
+              term: "ui-state",
+            },
+            { label: "Compose", caption: "draws it", term: "compose" },
+          ],
+          body: [
+            "Open any stage you are not sure about — each one says what it is, the problem that forces it to exist, and what concretely breaks if you delete it. That last part is the useful one: a layer whose absence breaks nothing is a layer you do not need.",
+          ],
+        },
+        {
+          id: "m-not-always",
+          kind: "callout",
+          tone: "why",
+          title: "You will not find all seven in every feature",
+          body: [
+            "A settings toggle is a boolean. Wrapping it in a DTO, a domain model and a UI model is three files that all say `Boolean` and one that says why.",
+            "The layers are not a checklist to complete — they are answers, and you only need the answer to a question you actually have. No cache, no offline mode, one endpoint? Then 'where does this data come from' has one answer, and a repository is a hop that explains nothing.",
+            "The judgement you are building is which questions this feature actually has. Senior engineers are not applying more layers than you; most of the time they are applying fewer, deliberately, and can say why.",
           ],
         },
         {
@@ -401,7 +462,7 @@ names.mapNotNull { it?.uppercase() }`,
           question:
             "Why shouldn't Compose necessarily consume the API DTO directly?",
           answer:
-            "Four reasons, in increasing order of importance.\n\n**1. Nullability.** DTO fields are nullable because the server might omit them. Pushing that to the UI means every composable handles `String?` and decides what a missing merchant looks like — in several places, differently.\n\n**2. Shape.** The DTO carries fields the screen does not need and lacks fields it does — a formatted amount, a display name, a relative timestamp. Computing those inside a composable means recomputing them on every recomposition.\n\n**3. Coupling.** If the composable reads `response.merchant`, a server rename to `merchant_name` becomes a UI change. The mapper is the shock absorber: rename it in one place and everything downstream is unaffected.\n\n**4. Stability.** In Compose, parameter types decide whether a composable can skip recomposition. A DTO full of nullable fields and plain `List`s is unlikely to be stable. A purpose-built UI model can be.\n\nThe honest counterpoint: on a settings toggle with one boolean, three models is ceremony. The rule is that the layers exist when they have separate reasons to change — not because a diagram says so.",
+            "Four reasons, in increasing order of importance.\n\n**1. Nullability.** DTO fields are nullable because the server might omit them. Pushing that to the UI means every composable handles `String?` and decides what a missing merchant looks like — in several places, differently.\n\n**2. Shape.** The DTO carries fields the screen does not need and lacks fields it does — a formatted amount, a display name, a relative timestamp. Computing those inside a composable means recomputing them on every [[recomposition]].\n\n**3. Coupling.** If the composable reads `response.merchant`, a server rename to `merchant_name` becomes a UI change. The mapper is the shock absorber: rename it in one place and everything downstream is unaffected.\n\n**4. [[compose-stability|Stability]].** In Compose, parameter types decide whether a composable can skip recomposition. A DTO full of nullable fields and plain `List`s is unlikely to be stable. A purpose-built UI model can be.\n\nThe honest counterpoint: on a settings toggle with one boolean, three models is ceremony. The rule is that the layers exist when they have separate reasons to change — not because a diagram says so.",
           keywords: ["nullability", "coupling", "shape", "stability", "rename"],
         },
       ],
@@ -436,7 +497,7 @@ var error: String?`,
     data class Error(val message: String) : UserUiState
 }`,
               verdict:
-                "Three states. The other five cannot be constructed, so no test, no reviewer and no future edit can produce them.",
+                "Three states. The other five cannot be constructed, so no test, no reviewer and no future edit can produce them — that is what [[sealed-types|a sealed type]] buys you.",
             },
           ],
         },

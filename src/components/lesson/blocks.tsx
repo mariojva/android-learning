@@ -21,6 +21,9 @@ import { cn, looseMatch, keywordCoverage, relativeDay } from "@/lib/utils";
 import { AiFeedback } from "@/components/question/AiFeedback";
 import { useProgress } from "@/lib/progress/context";
 import { lessonAnswerRef, useRestoreAnswers } from "@/lib/progress/answers";
+import { glossaryEntry } from "@/data/glossary";
+import { GlossaryCard } from "./GlossaryCard";
+import { RichText } from "@/components/ui/RichText";
 
 export function LessonBlockView({
   block,
@@ -84,9 +87,9 @@ function Prose({ block }: { block: LessonBlock }) {
         </h3>
       ) : null}
       {block.body?.map((p, i) => (
-        <p key={i} className="text-[14px] leading-[1.75] text-fg-dim">
-          {p}
-        </p>
+        <div key={i} className="text-[14px] leading-[1.75] text-fg-dim">
+          <RichText>{p}</RichText>
+        </div>
       ))}
     </div>
   );
@@ -107,9 +110,9 @@ function CodeBlock({ block }: { block: LessonBlock }) {
         />
       ) : null}
       {block.body?.map((p, i) => (
-        <p key={i} className="text-[13.5px] leading-relaxed text-muted">
-          {p}
-        </p>
+        <div key={i} className="text-[13.5px] leading-relaxed text-muted">
+          <RichText>{p}</RichText>
+        </div>
       ))}
     </div>
   );
@@ -172,7 +175,9 @@ function Predict({
         />
       ) : null}
 
-      <p className="mt-4 text-[13.5px] text-fg-dim">{block.question}</p>
+      <div className="mt-4 text-[13.5px] text-fg-dim">
+        <RichText>{block.question}</RichText>
+      </div>
 
       <div className="mt-3 flex flex-wrap items-center gap-2">
         <input
@@ -214,9 +219,9 @@ function Predict({
             )}
             {correct ? "That matches" : "Not quite — read on"}
           </div>
-          <p className="whitespace-pre-line text-[13.5px] leading-relaxed text-fg-dim">
-            {block.answer}
-          </p>
+          <div className="whitespace-pre-line text-[13.5px] leading-relaxed text-fg-dim">
+            <RichText>{block.answer}</RichText>
+          </div>
           <AiFeedback
             cacheRef={ref}
             questionTitle={block.title}
@@ -314,7 +319,9 @@ function Explain({
         />
       ) : null}
 
-      <p className="text-[14px] leading-relaxed text-fg-dim">{block.question}</p>
+      <div className="text-[14px] leading-relaxed text-fg-dim">
+        <RichText>{block.question}</RichText>
+      </div>
 
       <textarea
         value={value}
@@ -363,9 +370,9 @@ function Explain({
               <IconSpark size={12} />
               Answer
             </div>
-            <p className="whitespace-pre-line text-[13.5px] leading-relaxed text-fg-dim">
-              {block.answer}
-            </p>
+            <div className="whitespace-pre-line text-[13.5px] leading-relaxed text-fg-dim">
+              <RichText>{block.answer}</RichText>
+            </div>
             <AiFeedback
               cacheRef={ref}
               questionTitle={block.title}
@@ -421,9 +428,9 @@ function Quiz({
         Check yourself
       </div>
 
-      <p className="text-[14.5px] font-semibold leading-snug text-fg">
-        {block.question}
-      </p>
+      <div className="text-[14.5px] font-semibold leading-snug text-fg">
+        <RichText>{block.question}</RichText>
+      </div>
 
       <ul className="mt-4 space-y-2">
         {choices.map((choice: QuizChoice, i) => {
@@ -483,9 +490,9 @@ function Quiz({
                 </button>
 
                 {answered ? (
-                  <p className="animate-fade-in border-t border-line/70 px-3.5 py-2.5 pl-[46px] text-[12.5px] leading-relaxed text-muted">
-                    {choice.rationale}
-                  </p>
+                  <div className="animate-fade-in border-t border-line/70 px-3.5 py-2.5 pl-[46px] text-[12.5px] leading-relaxed text-muted">
+                    <RichText>{choice.rationale}</RichText>
+                  </div>
                 ) : null}
               </div>
             </li>
@@ -519,9 +526,9 @@ function Compare({ block }: { block: LessonBlock }) {
               copyable={false}
               className="rounded-none border-0"
             />
-            <p className="border-t border-line px-4 py-3 text-[13px] leading-relaxed text-muted">
-              {item.verdict}
-            </p>
+            <div className="border-t border-line px-4 py-3 text-[13px] leading-relaxed text-muted">
+              <RichText>{item.verdict}</RichText>
+            </div>
           </Card>
         ))}
       </div>
@@ -531,8 +538,14 @@ function Compare({ block }: { block: LessonBlock }) {
 
 /* ------------------------------ Pipeline --------------------------- */
 
+/**
+ * Every stage that names a glossary term opens into the full explanation.
+ * A caption like "mirrors the server's schema exactly" is written for
+ * someone who already knows what a DTO is; for everyone else the diagram
+ * is seven words they cannot look up, which is worse than no diagram.
+ */
 function Pipeline({ block }: { block: LessonBlock }) {
-  const [active, setActive] = useState<number | null>(null);
+  const [open, setOpen] = useState<number | null>(null);
 
   return (
     <div className="space-y-3">
@@ -544,54 +557,76 @@ function Pipeline({ block }: { block: LessonBlock }) {
 
       <Card className="p-5">
         <ol className="space-y-1">
-          {block.stages?.map((stage, i) => (
-            <li key={i}>
-              <button
-                type="button"
-                onMouseEnter={() => setActive(i)}
-                onMouseLeave={() => setActive(null)}
-                onFocus={() => setActive(i)}
-                onBlur={() => setActive(null)}
-                className={cn(
-                  "flex w-full items-center gap-3.5 rounded-lg px-3 py-2.5 text-left transition-colors duration-150",
-                  active === i ? "bg-surface-2" : "bg-transparent",
-                )}
-              >
-                <span
+          {block.stages?.map((stage, i) => {
+            const entry = stage.term ? glossaryEntry(stage.term) : undefined;
+            const isOpen = open === i;
+
+            return (
+              <li key={i}>
+                <button
+                  type="button"
+                  onClick={() => setOpen(isOpen ? null : i)}
+                  disabled={!entry}
+                  aria-expanded={entry ? isOpen : undefined}
                   className={cn(
-                    "mono-meta flex h-6 w-6 shrink-0 items-center justify-center rounded-md ring-1 ring-inset transition-colors",
-                    active === i
-                      ? "bg-accent/15 text-accent ring-accent/30"
-                      : "bg-surface-2 text-subtle ring-line-strong",
+                    "flex w-full items-center gap-3.5 rounded-lg px-3 py-2.5 text-left transition-colors duration-150",
+                    isOpen ? "bg-surface-2" : "bg-transparent",
+                    entry ? "hover:bg-surface-2" : "cursor-default",
                   )}
                 >
-                  {String(i + 1).padStart(2, "0")}
-                </span>
-                <span className="min-w-0 flex-1">
-                  <span className="block font-mono text-[13px] text-fg-dim">
-                    {stage.label}
+                  <span
+                    className={cn(
+                      "mono-meta flex h-6 w-6 shrink-0 items-center justify-center rounded-md ring-1 ring-inset transition-colors",
+                      isOpen
+                        ? "bg-accent/15 text-accent ring-accent/30"
+                        : "bg-surface-2 text-subtle ring-line-strong",
+                    )}
+                  >
+                    {String(i + 1).padStart(2, "0")}
                   </span>
-                  {stage.caption ? (
-                    <span className="block text-[12.5px] text-subtle">
-                      {stage.caption}
+                  <span className="min-w-0 flex-1">
+                    <span className="block font-mono text-[13px] text-fg-dim">
+                      {stage.label}
+                    </span>
+                    {stage.caption ? (
+                      <span className="block text-[12.5px] text-subtle">
+                        {stage.caption}
+                      </span>
+                    ) : null}
+                  </span>
+                  {entry ? (
+                    <span
+                      className={cn(
+                        "mono-meta shrink-0 transition-colors",
+                        isOpen ? "text-accent" : "text-faint",
+                      )}
+                    >
+                      {isOpen ? "close" : "what is this?"}
                     </span>
                   ) : null}
-                </span>
-              </button>
-              {i < (block.stages?.length ?? 0) - 1 ? (
-                <div className="flex items-center pl-[26px] text-faint">
-                  <IconArrowDown size={13} />
-                </div>
-              ) : null}
-            </li>
-          ))}
+                </button>
+
+                {isOpen && entry ? (
+                  <div className="animate-fade-up ml-[26px] mt-1 rounded-lg border border-line bg-bg-raised/60 p-4">
+                    <GlossaryCard entry={entry} />
+                  </div>
+                ) : null}
+
+                {i < (block.stages?.length ?? 0) - 1 ? (
+                  <div className="flex items-center pl-[26px] text-faint">
+                    <IconArrowDown size={13} />
+                  </div>
+                ) : null}
+              </li>
+            );
+          })}
         </ol>
       </Card>
 
       {block.body?.map((p, i) => (
-        <p key={i} className="max-w-2xl text-[13.5px] leading-relaxed text-muted">
-          {p}
-        </p>
+        <div key={i} className="max-w-2xl text-[13.5px] leading-relaxed text-muted">
+          <RichText>{p}</RichText>
+        </div>
       ))}
     </div>
   );
@@ -678,9 +713,9 @@ function Mutation({ block }: { block: LessonBlock }) {
       </Card>
 
       {block.body?.map((p, i) => (
-        <p key={i} className="text-[13.5px] leading-relaxed text-muted">
-          {p}
-        </p>
+        <div key={i} className="text-[13.5px] leading-relaxed text-muted">
+          <RichText>{p}</RichText>
+        </div>
       ))}
     </div>
   );
@@ -731,7 +766,9 @@ function Callout({ block }: { block: LessonBlock }) {
                     : "bg-accent",
               )}
             />
-            <span className="text-[13.5px] leading-relaxed text-fg-dim">{p}</span>
+            <div className="text-[13.5px] leading-relaxed text-fg-dim">
+              <RichText>{p}</RichText>
+            </div>
           </li>
         ))}
       </ul>
@@ -760,9 +797,9 @@ function Implement({
         </h3>
       ) : null}
       {block.body?.map((p, i) => (
-        <p key={i} className="mt-2 text-[13.5px] leading-relaxed text-muted">
-          {p}
-        </p>
+        <div key={i} className="mt-2 text-[13.5px] leading-relaxed text-muted">
+          <RichText>{p}</RichText>
+        </div>
       ))}
       {block.questionSlug ? (
         <Link

@@ -104,6 +104,24 @@ planning a migration that can be stopped halfway, Compose/Fragment interop,
 choosing what deserves a test, fakes over mocks, what a flaky test is telling
 you, and testing at the right seam.
 
+### The glossary
+
+`src/data/glossary.ts` exists because of a specific failure mode. A diagram
+captioned "DTO — mirrors the server's schema exactly" is written for someone who
+already knows what a DTO is; for everyone else it is a word they cannot look up,
+which is worse than no diagram.
+
+So every entry answers three questions, in this order: **what it is** in plain
+words, **why it exists** — the problem that forces it — and **what breaks
+without it**. The third is the one usually missing and the one that makes the
+term usable, because a layer whose absence breaks nothing is a layer you do not
+need. `overkillWhen` says that part out loud.
+
+Examples are deliberately from a different domain per entry — podcasts, cart,
+chat, weather, music — so the idea travels rather than binding to one app.
+Pipeline stages in a lesson reference entries by id and expand into them in
+place.
+
 Content lives in `src/data/` as typed TypeScript. That is deliberate: it is
 versioned with the code, reviewable in a pull request, and needs no round trip to
 render. Only per-user state is a database concern.

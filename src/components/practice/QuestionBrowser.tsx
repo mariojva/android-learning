@@ -4,12 +4,16 @@ import { useMemo, useState, type ReactNode } from "react";
 import { useSearchParams } from "next/navigation";
 import type {
   Difficulty,
+  MasteryStage,
+  OwnershipLevel,
   Question,
   QuestionFormat,
   QuestionStatus,
   QuestionTrack,
   TopicId,
 } from "@/lib/types";
+import { MASTERY_STAGES, OWNERSHIP_LEVELS } from "@/lib/types";
+import { STAGE_LABELS, OWNERSHIP_LABELS } from "@/lib/progress/mastery";
 import { ALL_QUESTIONS } from "@/data/questions";
 import { TOPICS } from "@/data/topics";
 import { QuestionCard } from "./QuestionCard";
@@ -24,12 +28,27 @@ const TABS: { id: "all" | QuestionFormat; label: string }[] = [
   { id: "coding", label: "Coding" },
   { id: "code-reading", label: "Code Reading" },
   { id: "code-review", label: "Code Review" },
+  { id: "feature", label: "Feature Assignments" },
   { id: "debugging", label: "Debugging" },
   { id: "quiz", label: "Quiz" },
   { id: "system-design", label: "System Design" },
 ];
 
 const DIFFICULTIES: Difficulty[] = ["Warmup", "Easy", "Medium", "Hard"];
+
+/*
+ * Two ordered scales, shown in order. These are not alternative ways to
+ * slice the bank — they answer different questions: "what kind of thinking
+ * does this demand of me" and "how much of the work is mine".
+ */
+const STAGES: { id: MasteryStage; label: string }[] = MASTERY_STAGES.map((s) => ({
+  id: s,
+  label: STAGE_LABELS[s],
+}));
+
+const OWNERSHIPS: { id: OwnershipLevel; label: string }[] = OWNERSHIP_LEVELS.map(
+  (o) => ({ id: o, label: OWNERSHIP_LABELS[o] }),
+);
 
 const TRACKS: QuestionTrack[] = [
   "Kotlin",
@@ -71,6 +90,8 @@ export function QuestionBrowser({ preset }: { preset?: BrowserPreset }) {
     preset?.track ? [preset.track] : [],
   );
   const [statuses, setStatuses] = useState<QuestionStatus[]>([]);
+  const [stages, setStages] = useState<MasteryStage[]>([]);
+  const [ownerships, setOwnerships] = useState<OwnershipLevel[]>([]);
   const [filtersOpen, setFiltersOpen] = useState(false);
 
   const pool = useMemo(() => {
@@ -87,6 +108,13 @@ export function QuestionBrowser({ preset }: { preset?: BrowserPreset }) {
       if (tab !== "all" && q.format !== tab) return false;
       if (topics.length > 0 && !q.topics.some((t) => topics.includes(t))) return false;
       if (difficulties.length > 0 && !difficulties.includes(q.difficulty)) return false;
+      if (stages.length > 0 && (!q.stage || !stages.includes(q.stage))) return false;
+      if (
+        ownerships.length > 0 &&
+        (!q.ownership || !ownerships.includes(q.ownership))
+      ) {
+        return false;
+      }
       if (tracks.length > 0 && !tracks.includes(q.track)) return false;
 
       if (statuses.length > 0) {
@@ -105,10 +133,15 @@ export function QuestionBrowser({ preset }: { preset?: BrowserPreset }) {
 
       return true;
     });
-  }, [pool, tab, topics, difficulties, tracks, statuses, query, progress]);
+  }, [pool, tab, topics, difficulties, tracks, statuses, stages, ownerships, query, progress]);
 
   const activeFilterCount =
-    topics.length + difficulties.length + tracks.length + statuses.length;
+    topics.length +
+    difficulties.length +
+    tracks.length +
+    statuses.length +
+    stages.length +
+    ownerships.length;
 
   const clearAll = () => {
     setTopics([]);
@@ -173,6 +206,44 @@ export function QuestionBrowser({ preset }: { preset?: BrowserPreset }) {
                 onClick={() =>
                   setTracks((prev) =>
                     prev.includes(t) ? prev.filter((x) => x !== t) : [...prev, t],
+                  )
+                }
+              />
+            ))}
+          </div>
+        </FilterGroup>
+
+        <FilterGroup title="What it demands">
+          <div className="flex flex-wrap gap-1.5">
+            {STAGES.map((s) => (
+              <Chip
+                key={s.id}
+                label={s.label}
+                active={stages.includes(s.id)}
+                onClick={() =>
+                  setStages((prev) =>
+                    prev.includes(s.id)
+                      ? prev.filter((x) => x !== s.id)
+                      : [...prev, s.id],
+                  )
+                }
+              />
+            ))}
+          </div>
+        </FilterGroup>
+
+        <FilterGroup title="How much you own">
+          <div className="flex flex-wrap gap-1.5">
+            {OWNERSHIPS.map((o) => (
+              <Chip
+                key={o.id}
+                label={o.label}
+                active={ownerships.includes(o.id)}
+                onClick={() =>
+                  setOwnerships((prev) =>
+                    prev.includes(o.id)
+                      ? prev.filter((x) => x !== o.id)
+                      : [...prev, o.id],
                   )
                 }
               />

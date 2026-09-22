@@ -17,6 +17,7 @@ import {
   IconCalendar,
   IconBookmark,
   IconChart,
+  IconTrophy,
   IconSettings,
   IconBook,
   IconGrid,
@@ -39,7 +40,10 @@ export interface NavGroup {
 
 export const NAV: NavGroup[] = [
   {
-    items: [{ label: "Dashboard", href: "/", icon: IconDashboard }],
+    items: [
+      { label: "Dashboard", href: "/", icon: IconDashboard },
+      { label: "Knowledge Graph", href: "/knowledge-graph", icon: IconSitemap },
+    ],
   },
   {
     label: "Learn",
@@ -62,6 +66,7 @@ export const NAV: NavGroup[] = [
       { label: "Android Challenges", href: "/practice/topic/android-challenges", icon: IconAndroid },
       { label: "Code Reading", href: "/practice/topic/code-reading", icon: IconBook },
       { label: "Code Review", href: "/practice/topic/code-review", icon: IconEye },
+      { label: "Feature Assignments", href: "/practice/topic/feature", icon: IconTarget },
       { label: "Debugging", href: "/practice/topic/debugging", icon: IconBug },
       { label: "Quizzes", href: "/practice/topic/quizzes", icon: IconQuiz },
       { label: "Interview Coding", href: "/practice/topic/interview-coding", icon: IconTerminal },
@@ -73,6 +78,7 @@ export const NAV: NavGroup[] = [
       { label: "Study Plans", href: "/study-plans", icon: IconCalendar },
       { label: "Bookmarks", href: "/bookmarks", icon: IconBookmark, badge: "bookmarks" },
       { label: "Progress", href: "/progress", icon: IconChart },
+      { label: "Mid-Level Readiness", href: "/readiness", icon: IconTrophy },
       { label: "Settings", href: "/settings", icon: IconSettings },
     ],
   },
@@ -121,6 +127,12 @@ export const PRACTICE_COLLECTIONS: Record<
     subtitle:
       "Somebody else's pull request. Say what you would say on the line you would say it, then compare.",
     format: "code-review",
+  },
+  feature: {
+    title: "Feature Assignments",
+    subtitle:
+      "An ambiguous requirement and no instructions. Decide the design, the tests, the failure behaviour and the way back.",
+    format: "feature",
   },
   debugging: {
     title: "Debugging",

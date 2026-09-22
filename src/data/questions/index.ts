@@ -10,6 +10,9 @@ import { SENIOR_QUESTIONS } from "./senior";
 import { SYSTEM_DESIGN_EXTRA_QUESTIONS } from "./systemDesignExtra";
 import { SYSTEM_DESIGN_QUESTIONS } from "./systemDesign";
 import { DSA_QUESTIONS } from "./dsa";
+import { DI_QUESTIONS } from "./di";
+import { BUILD_QUESTIONS } from "./build";
+import { FEATURE_QUESTIONS } from "./features";
 
 export const ALL_QUESTIONS: Question[] = [
   ...KOTLIN_QUESTIONS,
@@ -22,6 +25,9 @@ export const ALL_QUESTIONS: Question[] = [
   ...SENIOR_QUESTIONS,
   ...SYSTEM_DESIGN_QUESTIONS,
   ...SYSTEM_DESIGN_EXTRA_QUESTIONS,
+  ...DI_QUESTIONS,
+  ...BUILD_QUESTIONS,
+  ...FEATURE_QUESTIONS,
   ...DSA_QUESTIONS,
 ];
 
@@ -65,6 +71,7 @@ export const QUESTION_COUNTS = {
   debugging: questionsByFormat("debugging").length,
   quiz: questionsByFormat("quiz").length,
   systemDesign: questionsByFormat("system-design").length,
+  feature: questionsByFormat("feature").length,
 };
 
 export {

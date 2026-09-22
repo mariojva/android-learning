@@ -488,31 +488,38 @@ fun PostRow(post: Post) {
   {
     id: "compose-stability",
     term: "Stability",
-    expansion: "what lets Compose skip a recomposition",
+    expansion: "which comparison Compose uses to decide whether to skip",
     what: [
       "A type is *stable* when Compose can trust two things: that it will be told when the value changes, and that `equals` is a reliable way to ask whether it did.",
-      "When every parameter of a composable is stable and unchanged, Compose skips calling it entirely. When one is not, it cannot know, so it calls it again to be safe.",
+      "Since Kotlin 2.0.20, strong skipping is on by default, and it changed what stability decides. Every restartable composable is now skippable, whether or not its parameters are stable. What stability now decides is *how a parameter is compared*: stable ones by `equals`, unstable ones by instance identity (`===`).",
     ],
     why: [
-      "Skipping is the entire performance story of Compose. A screen that cannot skip redraws subtrees that did not change, which is where dropped frames come from.",
-      "`List<T>` is the common surprise: the interface is read-only but the object behind it might be a `MutableList`, so Compose cannot assume it will hear about changes — and treats it as unstable.",
+      "Skipping is the performance story of Compose: a screen that cannot skip redraws subtrees that did not change, and that is where dropped frames come from.",
+      "Because an unstable parameter is compared by identity, a value that is *equal but newly allocated* does not skip. That makes the real question where a value comes from, not only what type it is — a list rebuilt in the caller on every recomposition is a new instance every time.",
     ],
     breaks:
-      "You pass a `List` and a lambda into a row composable in a long feed. Nothing looks wrong, and every row recomposes on every scroll frame because neither parameter could be skipped. The bug reads as 'Compose is slow' rather than as a types problem.",
+      "A row composable takes a `List`, and the caller passes `items.filter { it.visible }`. That allocates a new list on every recomposition, so the identity check fails every time and the row recomposes on every scroll frame — even though the contents are identical and the composable is perfectly skippable. It reads as 'Compose is slow' rather than as an allocation in the wrong place.",
     example: {
-      label: "Shopping list: the same screen, skippable and not",
+      label: "Shopping list: the type is not the problem, the allocation is",
       language: "kotlin",
-      code: `// Unstable: List is an interface — the instance might be mutable, and
-// Compose is not told when a mutable one changes underneath it.
+      code: `// Skippable under strong skipping — but items is compared by identity,
+// because List is unstable.
 @Composable
-fun Items(items: List<Item>) { /* recomposes more than it needs to */ }
+fun Items(items: List<Item>) { /* ... */ }
 
-// Stable: an immutable type Compose can reason about.
+// The caller decides whether it actually skips.
 @Composable
-fun Items(items: ImmutableList<Item>) { /* skippable */ }
+fun Screen(all: List<Item>) {
+    // Wrong: a new list every recomposition, so identity never matches.
+    Items(all.filter { it.visible })
 
-// Also stable: a data class of stable fields, marked when Compose cannot
-// infer it — for instance because the type comes from another module.
+    // Right: the same instance while the input is unchanged.
+    val visible = remember(all) { all.filter { it.visible } }
+    Items(visible)
+}
+
+// Marking a type stable restores equals-comparison, so an equal-but-new
+// instance still skips. Useful when you cannot control the allocation.
 @Immutable
 data class CartSummary(val lineCount: Int, val totalLabel: String)`,
     },

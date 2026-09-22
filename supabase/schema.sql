@@ -114,6 +114,29 @@ create table if not exists public.answers (
 );
 
 -- -------------------------------------------------------------------
+-- Concept mastery
+--
+-- The five stages are stored. The proficiency label is not: it is
+-- derived in src/lib/progress/mastery.ts so the two cannot disagree.
+-- -------------------------------------------------------------------
+create table if not exists public.concept_mastery (
+  user_id          uuid not null references auth.users(id) on delete cascade,
+  concept_id       text not null,
+  recognise        boolean not null default false,
+  explain          boolean not null default false,
+  predict          boolean not null default false,
+  implement        boolean not null default false,
+  reason           boolean not null default false,
+  last_reviewed_at date,
+  next_review_at   date,
+  updated_at       timestamptz not null default now(),
+  primary key (user_id, concept_id)
+);
+
+create index if not exists concept_mastery_due_idx
+  on public.concept_mastery (user_id, next_review_at);
+
+-- -------------------------------------------------------------------
 -- Lesson progress
 -- -------------------------------------------------------------------
 create table if not exists public.lesson_progress (
@@ -161,6 +184,7 @@ alter table public.question_attempts enable row level security;
 alter table public.bookmarks         enable row level security;
 alter table public.notes             enable row level security;
 alter table public.answers           enable row level security;
+alter table public.concept_mastery   enable row level security;
 alter table public.lesson_progress   enable row level security;
 alter table public.study_sessions    enable row level security;
 alter table public.streaks           enable row level security;
@@ -170,7 +194,7 @@ declare
   t text;
 begin
   foreach t in array array[
-    'question_attempts', 'bookmarks', 'notes', 'answers',
+    'question_attempts', 'bookmarks', 'notes', 'answers', 'concept_mastery',
     'lesson_progress', 'study_sessions', 'streaks'
   ]
   loop

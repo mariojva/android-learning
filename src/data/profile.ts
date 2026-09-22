@@ -10,25 +10,45 @@ export const USER: UserProfile = {
   joinedAt: "2026-06-02",
 };
 
+/*
+ * Two hours, in the shape the curriculum calls for. Retrieval comes first
+ * deliberately: answering from memory before opening anything is the part
+ * that moves a concept from recognised to held, and it is also the part
+ * everyone skips when the plan does not name it.
+ */
 export const TODAY_SLOTS: DailyPlanSlot[] = [
   {
-    label: "Kotlin",
-    minutes: 45,
-    topic: "Collections & transformations",
+    label: "Retrieval",
+    minutes: 15,
+    topic: "Yesterday's concepts, no notes",
+    accent: "kotlin",
+    href: "/knowledge-graph",
+  },
+  {
+    label: "Concept",
+    minutes: 25,
+    topic: "One idea, and why it exists",
     accent: "kotlin",
     href: "/lessons/day-1",
   },
   {
-    label: "Android",
-    minutes: 45,
-    topic: "UI state & data flow",
+    label: "Implement",
+    minutes: 35,
+    topic: "Write it without copying",
     accent: "android",
     href: "/practice/dto-to-ui-model",
   },
   {
-    label: "Interview Prep",
+    label: "Code Reading",
+    minutes: 15,
+    topic: "Explain code you did not write",
+    accent: "android",
+    href: "/practice/topic/code-reading",
+  },
+  {
+    label: "Interview / Reasoning",
     minutes: 30,
-    topic: "Hashing — arrays & sets",
+    topic: "Kotlin problems and follow-ups",
     accent: "interview",
     href: "/practice/contains-duplicate",
   },

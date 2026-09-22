@@ -14,6 +14,14 @@ import {
   StreakStrip,
 } from "@/components/dashboard/panels";
 import { ActivityHeatmap } from "@/components/dashboard/Heatmap";
+import {
+  CurrentFocus,
+  ConceptsInProgress,
+  OwnershipPanel,
+  ConceptReviewPanel,
+  ReadyToStartPanel,
+  MasterySpread,
+} from "@/components/dashboard/mastery";
 import { useProgress } from "@/lib/progress/context";
 import {
   accuracy,
@@ -35,7 +43,16 @@ import {
 } from "@/data/activity";
 import { TODAY_SLOTS, USER } from "@/data/profile";
 import { topicLabel as topicLabelOf } from "@/data/topics";
-import { QUESTION_COUNTS } from "@/data/questions";
+import { QUESTION_COUNTS, ALL_QUESTIONS } from "@/data/questions";
+import { CONCEPTS } from "@/data/concepts";
+import {
+  conceptsInProgress,
+  conceptsDueForReview,
+  readyToStart,
+  ownershipProgress,
+  proficiencyOf,
+  masteryFor,
+} from "@/lib/progress/mastery";
 import { DAY_1 } from "@/data/lessons/day1";
 import { formatMinutes, greetingFor } from "@/lib/utils";
 import { useAuth } from "@/lib/auth/AuthProvider";
@@ -82,6 +99,23 @@ export default function DashboardPage() {
     };
   }, [progress]);
 
+  const mastery = useMemo(() => {
+    const counts: Record<string, number> = {};
+    for (const c of CONCEPTS) {
+      const p = proficiencyOf(masteryFor(progress, c.id));
+      counts[p] = (counts[p] ?? 0) + 1;
+    }
+    const inProgress = conceptsInProgress(progress);
+    return {
+      counts,
+      inProgress,
+      focus: inProgress[0] ?? null,
+      ready: readyToStart(progress, 4),
+      due: conceptsDueForReview(progress),
+      ownership: ownershipProgress(progress, ALL_QUESTIONS),
+    };
+  }, [progress]);
+
   return (
     <div className="space-y-9">
       {/* ---------------------------- Greeting --------------------------- */}
@@ -95,9 +129,32 @@ export default function DashboardPage() {
         <p className="mt-2 text-[14.5px] text-muted">
           {freshAccount
             ? "Your account is empty, which is exactly right — everything below will be something you earned."
-            : "Continue becoming a better Android engineer."}
+            : "Continue building your Android engineering mental model."}
         </p>
       </header>
+
+      {/* ------------------------ Mastery ------------------------ */}
+      {/*
+        Deliberately the first thing on the page, and deliberately narrow:
+        one concept in focus, a handful in progress, what is ready next.
+        The full sixty-nine live in the knowledge graph — a dashboard that
+        opens with the entire Android ecosystem teaches nobody anything.
+      */}
+      <section className="grid gap-5 lg:grid-cols-[1.4fr_1fr]">
+        <div className="space-y-5">
+          <CurrentFocus focus={mastery.focus} />
+          <ConceptsInProgress items={mastery.inProgress.slice(1, 6)} />
+        </div>
+        <div className="space-y-5">
+          <MasterySpread counts={mastery.counts} total={CONCEPTS.length} />
+          <ConceptReviewPanel items={mastery.due} />
+        </div>
+      </section>
+
+      <section className="grid gap-5 lg:grid-cols-2">
+        <OwnershipPanel levels={mastery.ownership} />
+        <ReadyToStartPanel items={mastery.ready} />
+      </section>
 
       {/* -------------------- Continue + today's plan --------------------- */}
       <section className="grid gap-5 lg:grid-cols-[1.55fr_1fr]">

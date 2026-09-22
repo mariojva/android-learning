@@ -3,6 +3,7 @@ import type {
   Bookmark,
   Note,
   ProgressState,
+  ConceptMastery,
   QuestionAttempt,
   SavedAnswer,
   StudySession,
@@ -39,7 +40,8 @@ export class SupabaseProgressRepository implements ProgressRepository {
   async load(): Promise<ProgressState | null> {
     const uid = this.userId;
 
-    const [attempts, bookmarks, notes, answers, lessons, sessions] = await Promise.all([
+    const [attempts, bookmarks, notes, answers, mastery, lessons, sessions] =
+      await Promise.all([
       this.supabase
         .from("question_attempts")
         .select(
@@ -51,6 +53,12 @@ export class SupabaseProgressRepository implements ProgressRepository {
       this.supabase
         .from("answers")
         .select("ref, body, verdict, feedback, updated_at")
+        .eq("user_id", uid),
+      this.supabase
+        .from("concept_mastery")
+        .select(
+          "concept_id, recognise, explain, predict, implement, reason, last_reviewed_at, next_review_at",
+        )
         .eq("user_id", uid),
       this.supabase
         .from("lesson_progress")
@@ -76,6 +84,7 @@ export class SupabaseProgressRepository implements ProgressRepository {
       bookmarks: [],
       notes: {},
       answers: {},
+      conceptMastery: {},
       lessonProgress: {},
       sessions: [],
       streak: { current: 0, longest: 0, lastActiveDate: "" },
@@ -131,6 +140,27 @@ export class SupabaseProgressRepository implements ProgressRepository {
         verdict: (row.verdict as SavedAnswer["verdict"] | null) ?? undefined,
         feedback: (row.feedback as string | null) ?? undefined,
         updatedAt: toISODate(row.updated_at),
+      };
+    }
+
+    if (mastery.error) {
+      console.warn(
+        `Concept mastery unavailable (${mastery.error.message}). ` +
+          "Run supabase/migrations/002_concept_mastery.sql to enable it.",
+      );
+    }
+
+    for (const row of (mastery.data ?? []) as Row[]) {
+      const id = row.concept_id as string;
+      state.conceptMastery[id] = {
+        conceptId: id,
+        recognise: Boolean(row.recognise),
+        explain: Boolean(row.explain),
+        predict: Boolean(row.predict),
+        implement: Boolean(row.implement),
+        reason: Boolean(row.reason),
+        lastReviewedAt: (row.last_reviewed_at as string | null) ?? undefined,
+        nextReviewAt: (row.next_review_at as string | null) ?? undefined,
       };
     }
 
@@ -306,6 +336,34 @@ export class SupabaseProgressRepository implements ProgressRepository {
       );
     }
 
+    /* --- concept mastery --- */
+    const masteryRows: Row[] = [];
+    for (const [id, m] of Object.entries(state.conceptMastery)) {
+      const before = previous?.conceptMastery[id];
+      if (!before || !sameMastery(before, m)) {
+        masteryRows.push({
+          user_id: uid,
+          concept_id: id,
+          recognise: m.recognise,
+          explain: m.explain,
+          predict: m.predict,
+          implement: m.implement,
+          reason: m.reason,
+          last_reviewed_at: m.lastReviewedAt ?? null,
+          next_review_at: m.nextReviewAt ?? null,
+          updated_at: new Date().toISOString(),
+        });
+      }
+    }
+    if (masteryRows.length > 0) {
+      writes.push(
+        this.supabase
+          .from("concept_mastery")
+          .upsert(masteryRows, { onConflict: "user_id,concept_id" })
+          .then(throwOnError("concept_mastery")),
+      );
+    }
+
     /* --- lesson progress --- */
     const lessonRows: Row[] = [];
     for (const [lessonId, entry] of Object.entries(state.lessonProgress)) {
@@ -418,6 +476,7 @@ export class SupabaseProgressRepository implements ProgressRepository {
       "bookmarks",
       "notes",
       "answers",
+      "concept_mastery",
       "lesson_progress",
       "study_sessions",
       "streaks",
@@ -460,6 +519,18 @@ function sameAttempt(
     a.passedTests === b.passedTests &&
     a.totalTests === b.totalTests &&
     a.code === b.code
+  );
+}
+
+function sameMastery(a: ConceptMastery, b: ConceptMastery): boolean {
+  return (
+    a.recognise === b.recognise &&
+    a.explain === b.explain &&
+    a.predict === b.predict &&
+    a.implement === b.implement &&
+    a.reason === b.reason &&
+    a.lastReviewedAt === b.lastReviewedAt &&
+    a.nextReviewAt === b.nextReviewAt
   );
 }
 

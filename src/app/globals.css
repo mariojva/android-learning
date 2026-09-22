@@ -26,6 +26,20 @@
   --color-accent-deep: #9ac62f;
   --color-accent-ink: #0c1400;
 
+  /*
+   * Ordinal ramp — one hue, five monotone steps toward the surface.
+   * Mastery stages and ownership levels are ORDERED, so they get a
+   * sequential ramp rather than five categorical hues: different hues
+   * would say "these are different kinds of thing" when what they
+   * actually are is the same thing, further along.
+   * Validated against --color-surface-2 in dark mode.
+   */
+  --color-ord-1: #45552d;
+  --color-ord-2: #677f34;
+  --color-ord-3: #87a73c;
+  --color-ord-4: #a6d043;
+  --color-ord-5: #c8fa4b;
+
   --color-done: #4ade80;
   --color-warmup: #7dd3fc;
   --color-easy: #4ade80;

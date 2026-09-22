@@ -12,6 +12,7 @@ export type QuestionFormat =
   | "coding"
   | "code-reading"
   | "code-review"
+  | "feature"
   | "debugging"
   | "quiz"
   | "system-design";
@@ -30,6 +31,7 @@ export type TopicId =
   | "collections"
   | "oop"
   | "generics"
+  | "execution"
   | "coroutines"
   | "flow"
   | "lifecycle"
@@ -37,9 +39,21 @@ export type TopicId =
   | "compose"
   | "architecture"
   | "networking"
+  | "data-modelling"
+  | "sql"
   | "room"
+  | "repositories"
+  | "offline"
+  | "di"
+  | "dagger"
   | "testing"
+  | "gradle"
+  | "ci-cd"
+  | "git"
+  | "observability"
   | "performance"
+  | "codebase"
+  | "ownership"
   | "dsa";
 
 export interface Topic {
@@ -165,6 +179,91 @@ export interface SystemDesignStage {
   signals?: string[];
 }
 
+/* ------------------------ Mastery & ownership ----------------------- */
+
+/**
+ * What a learner can currently do with a concept — not how much of its
+ * material they have seen. The order is the whole point: recognising a
+ * word is not explaining it, and explaining it is not being able to
+ * choose it over the alternatives.
+ */
+export type MasteryStage =
+  | "recognise"
+  | "explain"
+  | "predict"
+  | "implement"
+  | "reason";
+
+export const MASTERY_STAGES: MasteryStage[] = [
+  "recognise",
+  "explain",
+  "predict",
+  "implement",
+  "reason",
+];
+
+/** How much of a feature the learner could carry on their own. */
+export type OwnershipLevel =
+  | "follow"
+  | "implement"
+  | "design"
+  | "own"
+  | "improve";
+
+export const OWNERSHIP_LEVELS: OwnershipLevel[] = [
+  "follow",
+  "implement",
+  "design",
+  "own",
+  "improve",
+];
+
+/**
+ * Derived, never stored: a label computed from which stages are cleared.
+ * Storing it alongside them would be a second copy of the same fact, and
+ * the two would disagree the first time one was updated without the other.
+ */
+export type ConceptProficiency =
+  | "Not Started"
+  | "Learning"
+  | "Practising"
+  | "Proficient"
+  | "Mastered";
+
+/**
+ * A single idea the curriculum teaches, and what it depends on. The
+ * prerequisite edges are what make the knowledge graph a graph rather than
+ * a list — and what lets the app say *why* something is not next yet.
+ */
+export interface Concept {
+  id: string;
+  name: string;
+  /** One sentence: what it is. */
+  definition: string;
+  /** One sentence: the problem it exists to solve. */
+  why: string;
+  /** The module that introduces it. */
+  moduleId: string;
+  topics: TopicId[];
+  /** Concept ids that should come first. */
+  prerequisites?: string[];
+  /** Deeper treatment in the glossary, where one exists. */
+  glossaryId?: string;
+}
+
+/** Which stages a learner has cleared for one concept. */
+export interface ConceptMastery {
+  conceptId: string;
+  recognise: boolean;
+  explain: boolean;
+  predict: boolean;
+  implement: boolean;
+  reason: boolean;
+  lastReviewedAt?: string;
+  /** When spaced repetition should bring this back. */
+  nextReviewAt?: string;
+}
+
 export interface Question {
   id: string;
   title: string;
@@ -218,6 +317,15 @@ export interface Question {
   /* System design */
   designBrief?: string;
   designStages?: SystemDesignStage[];
+
+  /** Which stage of understanding this question actually exercises. */
+  stage?: MasteryStage;
+  /** How much of the work the learner owns in this exercise. */
+  ownership?: OwnershipLevel;
+  /** Concept ids this question practises — the link into the graph. */
+  concepts?: string[];
+  /** Concept ids worth clearing first. */
+  prerequisites?: string[];
 
   /* Shared */
   hints?: string[];
@@ -453,6 +561,8 @@ export interface ProgressState {
   notes: Record<string, Note>;
   /** Keyed by ref: `lesson:<lessonId>#<blockId>` or `question:<slug>#<partId>`. */
   answers: Record<string, SavedAnswer>;
+  /** Keyed by concept id. */
+  conceptMastery: Record<string, ConceptMastery>;
   lessonProgress: Record<string, { completedBlocks: string[]; completedAt?: string }>;
   sessions: StudySession[];
   /** Seeded so the dashboard is populated on first run. */

@@ -29,6 +29,22 @@ const TOPIC_PROGRESS: Record<TopicId, number> = {
   testing: 0.05,
   performance: 0.2,
   dsa: 0.4,
+  // Added with the 28-module curriculum. The seeded demo learner has not
+  // touched these, and pretending otherwise would make the demo lie about
+  // the one thing the dashboard is for.
+  execution: 0,
+  "data-modelling": 0,
+  sql: 0,
+  repositories: 0,
+  offline: 0,
+  di: 0,
+  dagger: 0,
+  gradle: 0,
+  "ci-cd": 0,
+  git: 0,
+  observability: 0,
+  codebase: 0,
+  ownership: 0,
 };
 
 function hashSlug(slug: string): number {
@@ -103,6 +119,7 @@ export function buildSeedProgress(today = new Date()): ProgressState {
       },
     },
     answers: {},
+    conceptMastery: {},
     lessonProgress: {},
     sessions,
     streak: {
@@ -118,6 +135,7 @@ export const EMPTY_PROGRESS: ProgressState = {
   bookmarks: [],
   notes: {},
   answers: {},
+  conceptMastery: {},
   lessonProgress: {},
   sessions: [],
   streak: { current: 0, longest: 0, lastActiveDate: "" },

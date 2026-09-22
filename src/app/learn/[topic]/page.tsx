@@ -50,6 +50,7 @@ export default async function LearnHubPage({
       "coding",
       "code-reading",
       "code-review",
+      "feature",
       "debugging",
       "quiz",
       "system-design",

@@ -64,6 +64,7 @@ export const formatLabels: Record<QuestionFormat, string> = {
   coding: "Coding",
   "code-reading": "Code Reading",
   "code-review": "Code Review",
+  feature: "Feature Assignment",
   debugging: "Debugging",
   quiz: "Quiz",
   "system-design": "System Design",

@@ -109,6 +109,7 @@ function Workspace({ question }: { question: Question }) {
       return <DebuggingWorkspace question={question} />;
     case "quiz":
       return <QuizWorkspace question={question} />;
+    case "feature":
     case "system-design":
       return <SystemDesignWorkspace question={question} />;
     case "coding":

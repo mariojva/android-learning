@@ -10,7 +10,14 @@ import {
   useState,
   type ReactNode,
 } from "react";
-import type { AnswerVerdict, ProgressState, SavedAnswer } from "@/lib/types";
+import type {
+  AnswerVerdict,
+  ConceptMastery,
+  MasteryStage,
+  ProgressState,
+  SavedAnswer,
+} from "@/lib/types";
+import { EMPTY_MASTERY, reviewIntervalDays } from "./mastery";
 import { buildSeedProgress, EMPTY_PROGRESS } from "@/data/seedProgress";
 import {
   LocalProgressRepository,
@@ -57,6 +64,10 @@ interface ProgressContextValue {
   setNote(ref: string, body: string): void;
   /** Store (or update) what the learner wrote for a free-text prompt. */
   saveAnswer(ref: string, patch: SaveAnswerInput): void;
+  /** Mark one stage of understanding cleared for a concept. */
+  clearMasteryStage(conceptId: string, stage: MasteryStage): void;
+  /** Record that a concept came back in review and was answered. */
+  recordConceptReview(conceptId: string, correct: boolean): void;
   completeLessonBlock(lessonId: string, blockId: string): void;
   resetLesson(lessonId: string): void;
   addStudyMinutes(minutes: number): void;
@@ -245,6 +256,69 @@ export function ProgressProvider({ children }: { children: ReactNode }) {
     });
   }, []);
 
+  /**
+   * Clearing a stage also schedules the first review. The interval widens
+   * with how much of the concept is already held, so a concept you have
+   * only just recognised comes back tomorrow and one you can reason about
+   * comes back in five weeks.
+   */
+  const clearMasteryStage = useCallback(
+    (conceptId: string, stage: MasteryStage) => {
+      setProgress((prev) => {
+        const before: ConceptMastery = prev.conceptMastery[conceptId] ?? {
+          conceptId,
+          ...EMPTY_MASTERY,
+        };
+        if (before[stage]) return prev;
+
+        const next: ConceptMastery = { ...before, [stage]: true };
+        const cleared = (
+          ["recognise", "explain", "predict", "implement", "reason"] as const
+        ).filter((s) => next[s]).length;
+        next.nextReviewAt = addDays(new Date(), reviewIntervalDays(cleared));
+
+        return {
+          ...prev,
+          conceptMastery: { ...prev.conceptMastery, [conceptId]: next },
+        };
+      });
+    },
+    [],
+  );
+
+  /**
+   * A correct review pushes the concept further out; a wrong one brings it
+   * back tomorrow and takes back the deepest stage, because getting it
+   * wrong is evidence the claim was premature.
+   */
+  const recordConceptReview = useCallback(
+    (conceptId: string, correct: boolean) => {
+      setProgress((prev) => {
+        const before = prev.conceptMastery[conceptId];
+        if (!before) return prev;
+
+        const stages = ["recognise", "explain", "predict", "implement", "reason"] as const;
+        const next: ConceptMastery = { ...before };
+        const clearedCount = stages.filter((s) => next[s]).length;
+
+        if (correct) {
+          next.lastReviewedAt = isoDate(new Date());
+          next.nextReviewAt = addDays(new Date(), reviewIntervalDays(clearedCount));
+        } else {
+          const deepest = [...stages].reverse().find((s) => next[s]);
+          if (deepest && deepest !== "recognise") next[deepest] = false;
+          next.nextReviewAt = addDays(new Date(), 1);
+        }
+
+        return {
+          ...prev,
+          conceptMastery: { ...prev.conceptMastery, [conceptId]: next },
+        };
+      });
+    },
+    [],
+  );
+
   const completeLessonBlock = useCallback((lessonId: string, blockId: string) => {
     setProgress((prev) => {
       const entry = prev.lessonProgress[lessonId] ?? { completedBlocks: [] };
@@ -331,6 +405,11 @@ export function ProgressProvider({ children }: { children: ReactNode }) {
         if (!answers[ref]) answers[ref] = answer;
       }
 
+      const conceptMastery = { ...prev.conceptMastery };
+      for (const [id, m] of Object.entries(local.conceptMastery ?? {})) {
+        if (!conceptMastery[id]) conceptMastery[id] = m;
+      }
+
       const lessonProgress = { ...prev.lessonProgress };
       for (const [id, entry] of Object.entries(local.lessonProgress ?? {})) {
         const existing = lessonProgress[id];
@@ -359,6 +438,7 @@ export function ProgressProvider({ children }: { children: ReactNode }) {
         bookmarks,
         notes,
         answers,
+        conceptMastery,
         lessonProgress,
         sessions,
       };
@@ -379,6 +459,8 @@ export function ProgressProvider({ children }: { children: ReactNode }) {
       toggleBookmark,
       setNote,
       saveAnswer,
+      clearMasteryStage,
+      recordConceptReview,
       completeLessonBlock,
       resetLesson,
       addStudyMinutes,
@@ -397,6 +479,8 @@ export function ProgressProvider({ children }: { children: ReactNode }) {
       toggleBookmark,
       setNote,
       saveAnswer,
+      clearMasteryStage,
+      recordConceptReview,
       completeLessonBlock,
       resetLesson,
       addStudyMinutes,
@@ -426,8 +510,16 @@ function normalise(stored: Partial<ProgressState>): ProgressState {
     bookmarks: stored.bookmarks ?? [],
     notes: stored.notes ?? {},
     answers: stored.answers ?? {},
+    conceptMastery: stored.conceptMastery ?? {},
     lessonProgress: stored.lessonProgress ?? {},
     sessions: stored.sessions ?? [],
     streak: stored.streak ?? { current: 0, longest: 0, lastActiveDate: "" },
   };
+}
+
+/** YYYY-MM-DD, n days from `from`. Dates, not timestamps: review is a day. */
+function addDays(from: Date, days: number): string {
+  const d = new Date(from);
+  d.setDate(d.getDate() + days);
+  return isoDate(d);
 }

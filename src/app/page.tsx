@@ -53,7 +53,7 @@ import {
   proficiencyOf,
   masteryFor,
 } from "@/lib/progress/mastery";
-import { DAY_1 } from "@/data/lessons/day1";
+import { ALL_LESSONS } from "@/data/lessons";
 import { formatMinutes, greetingFor } from "@/lib/utils";
 import { useAuth } from "@/lib/auth/AuthProvider";
 import {
@@ -76,8 +76,17 @@ export default function DashboardPage() {
 
   const stats = useMemo(() => {
     const sessions = progress.sessions;
-    const lessonBlocks = progress.lessonProgress[DAY_1.id]?.completedBlocks.length ?? 0;
-    const totalBlocks = DAY_1.sections.reduce((n, s) => n + s.blocks.length, 0);
+    // Across every lesson, not just Day 1 — pinning this to one lesson
+    // meant the figure silently stopped counting the moment a second one
+    // was written.
+    const lessonBlocks = ALL_LESSONS.reduce(
+      (n, l) => n + (progress.lessonProgress[l.id]?.completedBlocks.length ?? 0),
+      0,
+    );
+    const totalBlocks = ALL_LESSONS.reduce(
+      (n, l) => n + l.sections.reduce((m, s) => m + s.blocks.length, 0),
+      0,
+    );
 
     return {
       solved: solvedCount(progress),

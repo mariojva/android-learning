@@ -1,13 +1,24 @@
 /**
- * Every lesson, in one place. Day 1 is the only one written; as more
- * arrive they are added here, and the learning path's lesson counts
- * follow automatically rather than being claimed by hand.
+ * The lesson registry — one file per lesson, one list here.
+ *
+ * Every consumer reads this module rather than a lesson file directly.
+ * That matters more than it looks: the route that renders lessons uses
+ * `generateStaticParams`, so a lesson missing from this list is a lesson
+ * with no page built for it, and the failure is a 404 rather than an
+ * error anyone would notice at build time.
  */
-export { DAY_1, getLesson } from "./day1";
-export { LESSONS as ALL_LESSONS } from "./day1";
-
 import type { Lesson, LessonSection } from "@/lib/types";
-import { LESSONS } from "./day1";
+import { DAY_1 } from "./day1";
+import { DAY_2 } from "./day2";
+
+export { DAY_1 } from "./day1";
+export { DAY_2 } from "./day2";
+
+export const ALL_LESSONS: Lesson[] = [DAY_1, DAY_2];
+
+export function getLesson(slug: string): Lesson | undefined {
+  return ALL_LESSONS.find((l) => l.slug === slug);
+}
 
 /**
  * Which lesson sent a learner to this question, if any.
@@ -21,7 +32,7 @@ import { LESSONS } from "./day1";
 export function lessonForQuestion(
   slug: string,
 ): { lesson: Lesson; section: LessonSection } | null {
-  for (const lesson of LESSONS) {
+  for (const lesson of ALL_LESSONS) {
     for (const section of lesson.sections) {
       const match = section.blocks.some(
         (b) => b.kind === "implement" && b.questionSlug === slug,

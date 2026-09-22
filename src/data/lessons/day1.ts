@@ -727,7 +727,7 @@ return false`,
           title: "Day 1 complete",
           body: [
             "You can now say what `val` guarantees, choose an operator by its return type, order a chain deliberately, explain why a DTO should not reach a composable, and model state so impossible combinations cannot be built.",
-            "Tomorrow: sealed hierarchies in depth, and the first ViewModel.",
+            "Tomorrow: who actually owns the lifetime of your objects — and why every Android architecture decision follows from the answer.",
           ],
         },
       ],
@@ -735,8 +735,3 @@ return false`,
   ],
 };
 
-export const LESSONS: Lesson[] = [DAY_1];
-
-export function getLesson(slug: string): Lesson | undefined {
-  return LESSONS.find((l) => l.slug === slug);
-}

@@ -5,7 +5,8 @@ import { PageHeader, Card, DifficultyPill, Badge, LinkButton } from "@/component
 import { LEARN_HUBS, TOPIC_MAP } from "@/data/topics";
 import { ALL_QUESTIONS } from "@/data/questions";
 import { ANDROID_ENGINEER_PATH } from "@/data/path";
-import { DAY_1 } from "@/data/lessons/day1";
+import { ALL_LESSONS } from "@/data/lessons";
+import { MODULE_MAP } from "@/data/path";
 import type { LearnHubId } from "@/lib/types";
 import { formatLabels } from "@/lib/utils";
 import { IconArrowRight, IconClock, IconBook } from "@/components/icons";
@@ -44,6 +45,14 @@ export default async function LearnHubPage({
   const modules = ANDROID_ENGINEER_PATH.modules.filter((m) =>
     m.topics.some((t) => hub.topics.includes(t)),
   );
+
+  // The lesson for this hub, if one has been written — found through the
+  // module it belongs to rather than named here, so writing a lesson is
+  // enough to surface it and no page needs editing.
+  const lesson = ALL_LESSONS.find((l) => {
+    const module = MODULE_MAP.get(l.moduleId);
+    return module?.topics.some((t) => hub.topics.includes(t)) ?? false;
+  });
 
   const byFormat = (
     [
@@ -89,8 +98,8 @@ export default async function LearnHubPage({
         })}
       </section>
 
-      {/* ------------------------- Day 1 entry ------------------------- */}
-      {topic === "kotlin" ? (
+      {/* ------------------------ Lesson entry ------------------------- */}
+      {lesson ? (
         <section className="mb-10">
           <Card className="flex flex-col items-start gap-4 p-5 sm:flex-row sm:items-center sm:justify-between">
             <div className="flex items-start gap-3">
@@ -99,24 +108,24 @@ export default async function LearnHubPage({
               </span>
               <div>
                 <h3 className="text-[14.5px] font-semibold text-fg">
-                  {DAY_1.title}
+                  {lesson.title}
                 </h3>
                 <p className="mt-1 max-w-lg text-[13px] leading-relaxed text-muted">
-                  {DAY_1.goal}
+                  {lesson.goal}
                 </p>
                 <div className="mono-meta mt-2 flex items-center gap-3 text-subtle">
                   <span className="inline-flex items-center gap-1.5">
                     <IconClock size={11} />
-                    {DAY_1.totalMinutes} min
+                    {lesson.totalMinutes} min
                   </span>
                   <span className="text-faint">
-                    {DAY_1.sections.length} sections
+                    {lesson.sections.length} sections
                   </span>
                 </div>
               </div>
             </div>
-            <LinkButton href="/lessons/day-1" tone="primary" size="sm">
-              Open Day 1
+            <LinkButton href={`/lessons/${lesson.slug}`} tone="primary" size="sm">
+              Open Day {lesson.dayNumber}
               <IconArrowRight size={14} />
             </LinkButton>
           </Card>

@@ -6,6 +6,7 @@ import { PageHeader, Card, ProgressBar, DifficultyPill, Badge } from "@/componen
 import { ANDROID_ENGINEER_PATH } from "@/data/path";
 import { useProgress } from "@/lib/progress/context";
 import { moduleProgress } from "@/lib/progress/selectors";
+import { ALL_LESSONS } from "@/data/lessons";
 import { topicLabel } from "@/data/topics";
 import type { Difficulty } from "@/lib/types";
 import {
@@ -124,8 +125,12 @@ export default function LearningPathPage() {
                 outcomes={module.outcomes}
                 locked={locked}
                 href={
-                  module.id === "m01"
-                    ? "/lessons/day-1"
+                  // Derived, not hardcoded: a module with a lesson opens the
+                  // lesson, everything else opens its exercises. Pinning
+                  // "m01" here meant every lesson written after Day 1 would
+                  // be unreachable from the path with nothing to show for it.
+                  lessonForModule(module.id)?.slug
+                    ? `/lessons/${lessonForModule(module.id)!.slug}`
                     : `/practice?topic=${module.topics[0]}`
                 }
               />
@@ -135,6 +140,11 @@ export default function LearningPathPage() {
       </ol>
     </div>
   );
+}
+
+/** The first lesson written for a module, if any. */
+function lessonForModule(moduleId: string) {
+  return ALL_LESSONS.find((l) => l.moduleId === moduleId);
 }
 
 function ModuleCard({

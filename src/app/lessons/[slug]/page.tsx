@@ -1,13 +1,13 @@
 import { notFound } from "next/navigation";
 import type { Metadata } from "next";
-import { LESSONS, getLesson } from "@/data/lessons/day1";
+import { ALL_LESSONS, getLesson } from "@/data/lessons";
 import { LessonView } from "@/components/lesson/LessonView";
 
 /** Static export: only the paths generated below exist as files. */
 export const dynamicParams = false;
 
 export function generateStaticParams() {
-  return LESSONS.map((l) => ({ slug: l.slug }));
+  return ALL_LESSONS.map((l) => ({ slug: l.slug }));
 }
 
 export async function generateMetadata({

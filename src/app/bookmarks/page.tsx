@@ -5,7 +5,7 @@ import Link from "next/link";
 import { PageHeader, Card, EmptyState, Button, DifficultyPill } from "@/components/ui/primitives";
 import { useProgress } from "@/lib/progress/context";
 import { getQuestion } from "@/data/questions";
-import { getLesson } from "@/data/lessons/day1";
+import { getLesson } from "@/data/lessons";
 import { statusOf } from "@/lib/progress/selectors";
 import { QuestionCard } from "@/components/practice/QuestionCard";
 import { IconBookmark, IconNote, IconTrash, IconBook } from "@/components/icons";

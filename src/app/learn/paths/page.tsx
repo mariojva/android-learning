@@ -31,19 +31,29 @@ export default function LearningPathPage() {
     [path.modules, progress],
   );
 
-  // A module unlocks when the one before it is at least half done.
+  // A module unlocks when the one before it is at least half done. A module
+  // with no exercises yet is not a gate — it has nothing to be half done of,
+  // so it passes the walk through rather than stopping it.
   const unlockedUpTo = useMemo(() => {
     let last = 1;
     for (let i = 0; i < modules.length; i += 1) {
-      if (modules[i].p.percent >= 50) last = i + 2;
+      const percent = modules[i].p.percent;
+      if (percent === null || percent >= 50) last = i + 2;
       else break;
     }
     return Math.max(last, 2);
   }, [modules]);
 
-  const overall = Math.round(
-    modules.reduce((sum, m) => sum + m.p.percent, 0) / Math.max(1, modules.length),
-  );
+  // Empty modules are excluded from the average for the same reason: counting
+  // them as 0% would report the course as less complete the more placeholder
+  // modules the curriculum has.
+  const overall = useMemo(() => {
+    const scored = modules.filter((m) => m.p.percent !== null);
+    if (scored.length === 0) return 0;
+    return Math.round(
+      scored.reduce((sum, m) => sum + (m.p.percent ?? 0), 0) / scored.length,
+    );
+  }, [modules]);
 
   return (
     <div>
@@ -67,7 +77,7 @@ export default function LearningPathPage() {
       <ol className="space-y-3">
         {modules.map(({ module, p, index }) => {
           const locked = index + 1 > unlockedUpTo && p.percent === 0;
-          const complete = p.percent >= 100;
+          const complete = p.percent !== null && p.percent >= 100;
 
           return (
             <li key={module.id} className="relative pl-7 sm:pl-9">
@@ -84,7 +94,7 @@ export default function LearningPathPage() {
                   "absolute left-0 top-6 flex h-[19px] w-[19px] items-center justify-center rounded-full ring-2 sm:left-1",
                   complete
                     ? "bg-done/15 text-done ring-done/30"
-                    : p.percent > 0
+                    : (p.percent ?? 0) > 0
                       ? "bg-accent/15 text-accent ring-accent/30"
                       : "bg-surface-2 text-faint ring-line-strong",
                 )}
@@ -151,13 +161,17 @@ function ModuleCard({
   exercises: number;
   hours: number;
   topics: string[];
-  percent: number;
+  percent: number | null;
   solved: number;
   total: number;
   outcomes: string[];
   locked: boolean;
   href: string;
 }) {
+  // No exercises mapped to this module yet. Saying so is the honest render;
+  // a 0% bar reads as "you have done none of it" when the truth is that
+  // there is none of it to do.
+  const empty = percent === null;
   return (
     <Card
       interactive={!locked}
@@ -202,19 +216,31 @@ function ModuleCard({
       </div>
 
       <div className="mt-4 flex items-center gap-3">
-        <ProgressBar value={percent} className="flex-1" />
-        <span className="mono-meta shrink-0 text-subtle">
-          {solved}/{total}
-        </span>
-        {!locked ? (
-          <Link
-            href={href}
-            className="mono-meta inline-flex shrink-0 items-center gap-1.5 rounded-md border border-line bg-surface-2 px-2.5 py-1.5 text-fg-dim transition-colors hover:border-line-strong hover:text-accent"
-          >
-            {percent > 0 ? "Continue" : "Start"}
-            <IconArrowRight size={12} />
-          </Link>
-        ) : null}
+        {empty ? (
+          <>
+            <Badge tone="neutral">Exercises coming</Badge>
+            <span className="mono-meta flex-1 text-faint">
+              Nothing mapped to this module yet — it does not hold up the
+              modules after it.
+            </span>
+          </>
+        ) : (
+          <>
+            <ProgressBar value={percent ?? 0} className="flex-1" />
+            <span className="mono-meta shrink-0 text-subtle">
+              {solved}/{total}
+            </span>
+            {!locked ? (
+              <Link
+                href={href}
+                className="mono-meta inline-flex shrink-0 items-center gap-1.5 rounded-md border border-line bg-surface-2 px-2.5 py-1.5 text-fg-dim transition-colors hover:border-line-strong hover:text-accent"
+              >
+                {(percent ?? 0) > 0 ? "Continue" : "Start"}
+                <IconArrowRight size={12} />
+              </Link>
+            ) : null}
+          </>
+        )}
       </div>
 
       {outcomes.length > 0 && !locked ? (

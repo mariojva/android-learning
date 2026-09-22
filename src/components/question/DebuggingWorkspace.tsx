@@ -15,6 +15,7 @@ import {
   IconEye,
 } from "@/components/icons";
 import { useProgress } from "@/lib/progress/context";
+import { useRecordWhenComplete } from "@/lib/progress/completion";
 import { questionAnswerRef, useRestoreAnswers } from "@/lib/progress/answers";
 
 /**
@@ -31,6 +32,8 @@ export function DebuggingWorkspace({ question }: { question: Question }) {
   const [diagnosis, setDiagnosis] = useState("");
   const [revealedHints, setRevealedHints] = useState(0);
   const [committed, setCommitted] = useState(false);
+  /** Read the answer without diagnosing — completes, but not as correct. */
+  const [bailed, setBailed] = useState(false);
 
   useRestoreAnswers([ref], (restored) => {
     const body = restored[ref]?.body;
@@ -39,10 +42,27 @@ export function DebuggingWorkspace({ question }: { question: Question }) {
     setCommitted(true);
   });
 
+  // Derived, so a diagnosis restored from a previous session completes the
+  // exercise too — the commit button is gone by then.
+  useRecordWhenComplete(question.slug, committed && !bailed);
+
   const commit = () => {
     setCommitted(true);
     saveAnswer(ref, { body: diagnosis });
-    recordAttempt(question.slug, { solved: true, correct: true });
+  };
+
+  /**
+   * Reading the answer without committing a diagnosis is allowed — but it
+   * still has to record something. An escape hatch that records nothing
+   * leaves the exercise permanently unfinished with its only completing
+   * control now hidden, which is how a lesson section ends up stuck at 88%.
+   * So it completes the exercise and marks the attempt incorrect, which is
+   * exactly what happened.
+   */
+  const revealWithoutCommitting = () => {
+    setBailed(true);
+    setCommitted(true);
+    recordAttempt(question.slug, { solved: true, correct: false });
   };
 
   return (
@@ -173,7 +193,7 @@ export function DebuggingWorkspace({ question }: { question: Question }) {
               written one feels like learning and is not — the useful part of
               debugging is the search, not the answer.
             </p>
-            <Button tone="ghost" size="sm" onClick={() => setCommitted(true)}>
+            <Button tone="ghost" size="sm" onClick={revealWithoutCommitting}>
               Reveal anyway
             </Button>
           </Card>

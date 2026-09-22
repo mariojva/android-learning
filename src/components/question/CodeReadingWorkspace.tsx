@@ -9,6 +9,7 @@ import { AiFeedback } from "./AiFeedback";
 import { IconEye, IconCheck, IconArrowRight, IconSpark } from "@/components/icons";
 import { keywordCoverage } from "@/lib/utils";
 import { useProgress } from "@/lib/progress/context";
+import { useRecordWhenComplete } from "@/lib/progress/completion";
 import { questionAnswerRef, useRestoreAnswers } from "@/lib/progress/answers";
 
 /**
@@ -17,7 +18,7 @@ import { questionAnswerRef, useRestoreAnswers } from "@/lib/progress/answers";
  */
 export function CodeReadingWorkspace({ question }: { question: Question }) {
   const prompts = question.readingPrompts ?? [];
-  const { recordAttempt, saveAnswer } = useProgress();
+  const { saveAnswer } = useProgress();
 
   const refFor = (promptId: string) => questionAnswerRef(question.slug, promptId);
 
@@ -65,12 +66,15 @@ export function CodeReadingWorkspace({ question }: { question: Question }) {
     saveAnswer(refFor(current.id), { body: answers[current.id] ?? "" });
   };
 
+  // Completion is derived, not fired from the last click — see the hook. A
+  // session restored straight to the finished screen completes too.
+  useRecordWhenComplete(question.slug, finished);
+
   const next = () => {
     if (index < prompts.length - 1) {
       setIndex((i) => i + 1);
     } else {
       setFinished(true);
-      recordAttempt(question.slug, { solved: true, correct: true });
     }
   };
 

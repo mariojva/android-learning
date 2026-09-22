@@ -194,10 +194,18 @@ function daysBetween(iso: string, today: Date): number {
   return Math.floor(ms / 86_400_000);
 }
 
+/**
+ * `percent` is null when the module has no exercises yet, rather than 0.
+ * Those are different states and conflating them is a real bug: a module
+ * with nothing in it renders as 0% done forever, and — because the path
+ * unlocks each module off the previous one's percentage — silently gates
+ * every module behind it on a bar that can never move. Callers must handle
+ * null explicitly, which is the point.
+ */
 export function moduleProgress(
   progress: ProgressState,
   topics: TopicId[],
-): { percent: number; solved: number; total: number } {
+): { percent: number | null; solved: number; total: number } {
   const inModule = ALL_QUESTIONS.filter((q) =>
     q.topics.some((t) => topics.includes(t)),
   );
@@ -205,7 +213,8 @@ export function moduleProgress(
   return {
     solved,
     total: inModule.length,
-    percent: inModule.length === 0 ? 0 : Math.round((solved / inModule.length) * 100),
+    percent:
+      inModule.length === 0 ? null : Math.round((solved / inModule.length) * 100),
   };
 }
 

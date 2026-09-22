@@ -457,14 +457,14 @@ jobs:
   verify:
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v7
 
-      - uses: actions/setup-java@v4
+      - uses: actions/setup-java@v6
         with:
           distribution: temurin
           java-version: 17
 
-      - uses: gradle/actions/setup-gradle@v4
+      - uses: gradle/actions/setup-gradle@v6
         with:
           cache-read-only: \${{ github.ref != 'refs/heads/main' }}
 
@@ -474,7 +474,7 @@ jobs:
 
       - run: ./gradlew assembleDebug
 
-      - uses: actions/upload-artifact@v4
+      - uses: actions/upload-artifact@v7
         if: failure()
         with:
           name: reports
@@ -493,8 +493,8 @@ jobs:
         question:
           "cache-read-only is true for branches and false for main. Explain the reasoning.",
         expert:
-          "Only main writes to the shared build cache; PR branches read it. That stops a branch with unusual or broken state from poisoning the cache that everyone else depends on, while still letting PRs benefit from the work main has already done. It is a trust boundary expressed as a cache policy.",
-        keywords: ["poison", "trusted", "read", "write", "shared"],
+          "Only the default branch writes to the shared build cache; feature branches read it. Gradle's own guidance is exactly this — read-only is 'typical for feature branches so only the default branch updates the cache' — because every branch writing would produce redundant, competing cache entries. It also happens to stop a branch with broken state from polluting what everyone else depends on. Either way PRs still get the benefit of work the default branch has already done.",
+        keywords: ["default branch", "redundant", "read", "write", "shared"],
       },
       {
         id: "p3",

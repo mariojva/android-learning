@@ -14,6 +14,7 @@ import {
 } from "@/components/icons";
 import { cn } from "@/lib/utils";
 import { useProgress } from "@/lib/progress/context";
+import { useRecordWhenComplete } from "@/lib/progress/completion";
 import { questionAnswerRef, useRestoreAnswers } from "@/lib/progress/answers";
 
 /**
@@ -22,7 +23,7 @@ import { questionAnswerRef, useRestoreAnswers } from "@/lib/progress/answers";
  * recognising one.
  */
 export function SystemDesignWorkspace({ question }: { question: Question }) {
-  const { recordAttempt, saveAnswer } = useProgress();
+  const { saveAnswer } = useProgress();
   const stages = question.designStages ?? [];
 
   const refFor = (stageId: string) => questionAnswerRef(question.slug, stageId);
@@ -55,12 +56,12 @@ export function SystemDesignWorkspace({ question }: { question: Question }) {
   const done = Object.keys(revealed).length;
   const percent = stages.length === 0 ? 0 : (done / stages.length) * 100;
 
+  // Completion is derived, not fired from the last click — see the hook.
+  useRecordWhenComplete(question.slug, stages.length > 0 && done >= stages.length);
+
   const revealStage = (id: string) => {
     setRevealed((prev) => ({ ...prev, [id]: true }));
     saveAnswer(refFor(id), { body: answers[id] ?? "" });
-    if (Object.keys(revealed).length + 1 >= stages.length) {
-      recordAttempt(question.slug, { solved: true, correct: true });
-    }
   };
 
   return (

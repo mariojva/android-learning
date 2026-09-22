@@ -189,7 +189,12 @@ export function ProgressProvider({ children }: { children: ReactNode }) {
           [slug]: {
             questionSlug: slug,
             attempts: (existing?.attempts ?? 0) + 1,
-            solved: input.solved ?? existing?.solved ?? false,
+            // Solved is a high-water mark, never a live verdict. Re-opening a
+            // question you have already passed — to reread a quiz rationale, to
+            // try a different implementation — must not walk your progress
+            // backwards. `lastCorrect` below is what stays honest about the
+            // most recent attempt.
+            solved: (input.solved ?? false) || (existing?.solved ?? false),
             lastCorrect: input.correct ?? input.solved ?? existing?.lastCorrect,
             passedTests: input.passedTests ?? existing?.passedTests,
             totalTests: input.totalTests ?? existing?.totalTests,

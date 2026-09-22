@@ -42,6 +42,21 @@ export function CodingWorkspace({ question }: { question: Question }) {
     [question.tests],
   );
 
+  /**
+   * Some exercises have no runnable tests on purpose — wiring a Hilt module or
+   * refactoring to constructor injection has no return value to assert on.
+   * Those questions still have to be completable. Deriving "solved" from a
+   * test count that is structurally zero is how an exercise ends up with no
+   * path to done at all, so the no-test case gets its own control instead.
+   */
+  const hasTests = (question.tests?.length ?? 0) > 0;
+
+  /** For a test-free exercise, the learner's own word is the completion. */
+  const markWritten = useCallback(() => {
+    setSubmitted(true);
+    recordAttempt(question.slug, { solved: true, correct: true, code });
+  }, [code, question.slug, recordAttempt]);
+
   const run = useCallback(
     async (isSubmit: boolean) => {
       setRunning(true);
@@ -234,13 +249,24 @@ export function CodingWorkspace({ question }: { question: Question }) {
 
             {tab === "tests" ? (
               <div className="max-h-[440px] overflow-y-auto p-4">
-                <p className="mb-3 text-[12.5px] text-subtle">
-                  {visibleTests.length} visible test
-                  {visibleTests.length === 1 ? "" : "s"}
-                  {(question.tests?.length ?? 0) > visibleTests.length
-                    ? ` · ${(question.tests?.length ?? 0) - visibleTests.length} hidden`
-                    : ""}
-                </p>
+                {!hasTests ? (
+                  <p className="text-[12.5px] leading-relaxed text-subtle">
+                    This exercise has no automated tests. What it asks for —
+                    wiring, structure, where a dependency is declared — has no
+                    return value to assert on, so the check is reading your
+                    version against the reference and being able to say why
+                    each difference matters. Write your answer, then press
+                    &ldquo;Done&rdquo;.
+                  </p>
+                ) : (
+                  <p className="mb-3 text-[12.5px] text-subtle">
+                    {visibleTests.length} visible test
+                    {visibleTests.length === 1 ? "" : "s"}
+                    {(question.tests?.length ?? 0) > visibleTests.length
+                      ? ` · ${(question.tests?.length ?? 0) - visibleTests.length} hidden`
+                      : ""}
+                  </p>
+                )}
                 <ul className="space-y-2">
                   {visibleTests.map((t) => (
                     <li
@@ -248,8 +274,10 @@ export function CodingWorkspace({ question }: { question: Question }) {
                       className="rounded-lg border border-line bg-bg-raised p-3"
                     >
                       <div className="text-[12.5px] text-fg-dim">{t.name}</div>
-                      <div className="mono-meta mt-2 text-muted">{t.call}</div>
-                      <div className="mono-meta mt-1 text-accent-soft">
+                      <div className="mono-meta mt-2 break-words text-muted">
+                        {t.call}
+                      </div>
+                      <div className="mono-meta mt-1 break-words text-accent-soft">
                         → {t.expected}
                       </div>
                     </li>
@@ -269,7 +297,7 @@ export function CodingWorkspace({ question }: { question: Question }) {
               <Button
                 tone="secondary"
                 size="sm"
-                disabled={running}
+                disabled={running || !hasTests}
                 onClick={() => void run(false)}
               >
                 <IconPlay size={12} />
@@ -279,10 +307,10 @@ export function CodingWorkspace({ question }: { question: Question }) {
                 tone="primary"
                 size="sm"
                 disabled={running}
-                onClick={() => void run(true)}
+                onClick={() => (hasTests ? void run(true) : markWritten())}
               >
                 <IconSubmit size={13} />
-                Submit
+                {hasTests ? "Submit" : "Done — show the reference"}
               </Button>
               <Button
                 tone="ghost"
@@ -339,7 +367,12 @@ export function CodingWorkspace({ question }: { question: Question }) {
         ) : (
           <SolutionLock
             reason="Submit an attempt first. The value of this page is in what you notice while you are stuck — reading the answer early spends that for nothing."
-            onUnlock={() => setForceSolution(true)}
+            onUnlock={() => {
+              setForceSolution(true);
+              // An escape hatch that records nothing leaves the exercise
+              // permanently unfinished. Mark it done, and mark it wrong.
+              recordAttempt(question.slug, { solved: true, correct: false });
+            }}
           />
         )}
       </section>
@@ -400,26 +433,50 @@ function ResultPanel({ result }: { result: RunResult }) {
 
       {result.results.length > 0 ? (
         <ul className="divide-y divide-line">
-          {result.results.map((t) => (
-            <li key={t.name} className="flex items-start gap-3 px-4 py-2.5">
-              <span className="mt-[3px] shrink-0">
-                {t.passed ? (
-                  <IconCheck size={13} className="text-done" />
-                ) : (
-                  <IconX size={13} className="text-hard" />
-                )}
-              </span>
-              <div className="min-w-0 flex-1">
-                <div className="text-[12.5px] text-fg-dim">{t.name}</div>
-                <div className="mono-meta mt-1 truncate text-subtle">{t.call}</div>
-              </div>
-              <div className="mono-meta shrink-0 text-right">
-                <span className={t.passed ? "text-done" : "text-subtle"}>
-                  {t.expected}
+          {result.results.map((t) => {
+            // A long expected value cannot share a row with the test name:
+            // pinned to the right it takes its full intrinsic width and
+            // crushes the name to nothing. Short values stay on the right
+            // where they read as a column; long ones get their own line.
+            // Never truncated — on a learning tool the expected result is
+            // the part you most need to see.
+            const inline = t.expected.length <= 24;
+
+            return (
+              <li key={t.name} className="flex items-start gap-3 px-4 py-2.5">
+                <span className="mt-[3px] shrink-0">
+                  {t.passed ? (
+                    <IconCheck size={13} className="text-done" />
+                  ) : (
+                    <IconX size={13} className="text-hard" />
+                  )}
                 </span>
-              </div>
-            </li>
-          ))}
+                <div className="min-w-0 flex-1">
+                  <div className="text-[12.5px] text-fg-dim">{t.name}</div>
+                  <div className="mono-meta mt-1 truncate text-subtle" title={t.call}>
+                    {t.call}
+                  </div>
+                  {!inline ? (
+                    <div
+                      className={cn(
+                        "mono-meta mt-1.5 break-words",
+                        t.passed ? "text-done" : "text-subtle",
+                      )}
+                    >
+                      → {t.expected}
+                    </div>
+                  ) : null}
+                </div>
+                {inline ? (
+                  <div className="mono-meta shrink-0 text-right">
+                    <span className={t.passed ? "text-done" : "text-subtle"}>
+                      {t.expected}
+                    </span>
+                  </div>
+                ) : null}
+              </li>
+            );
+          })}
         </ul>
       ) : null}
 

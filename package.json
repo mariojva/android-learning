@@ -7,7 +7,8 @@
     "dev": "next dev",
     "build": "next build",
     "start": "next start",
-    "typecheck": "tsc --noEmit"
+    "typecheck": "tsc --noEmit",
+    "check:content": "tsx scripts/check-content.ts"
   },
   "dependencies": {
     "@monaco-editor/react": "^4.6.0",
@@ -23,6 +24,7 @@
     "@types/react-dom": "^19.1.0",
     "monaco-editor": "^0.52.0",
     "tailwindcss": "^4.1.0",
+    "tsx": "^4.23.15",
     "typescript": "^5.7.0"
   }
 }

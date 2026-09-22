@@ -17,14 +17,40 @@ import {
 import { cn, clockLabel, formatMinutes } from "@/lib/utils";
 import { useProgress } from "@/lib/progress/context";
 
+/**
+ * The completion id for a section that has nothing to answer. Namespaced
+ * with a colon so it can never collide with a real block id.
+ */
+function readMarker(sectionId: string): string {
+  return `${sectionId}:read`;
+}
+
 export function LessonView({ lesson }: { lesson: Lesson }) {
   const { progress, completeLessonBlock, resetLesson, toggleBookmark, addStudyMinutes } =
     useProgress();
 
-  const completedBlocks = useMemo(
-    () => new Set(progress.lessonProgress[lesson.id]?.completedBlocks ?? []),
-    [progress.lessonProgress, lesson.id],
-  );
+  /**
+   * Recorded completions, plus the ones that can be derived.
+   *
+   * An `implement` block used to mark itself done when its link was
+   * clicked, which meant opening the editor counted as finishing the
+   * challenge — and, if the click's save was lost, finishing it counted
+   * as nothing. Reading it from the question's own attempt settles both
+   * directions: the block is done when the question is solved, whenever
+   * and however that happened.
+   */
+  const completedBlocks = useMemo(() => {
+    const recorded = new Set(
+      progress.lessonProgress[lesson.id]?.completedBlocks ?? [],
+    );
+    for (const section of lesson.sections) {
+      for (const block of section.blocks) {
+        if (block.kind !== "implement" || !block.questionSlug) continue;
+        if (progress.attempts[block.questionSlug]?.solved) recorded.add(block.id);
+      }
+    }
+    return recorded;
+  }, [progress.lessonProgress, progress.attempts, lesson]);
 
   const bookmarked = progress.bookmarks.some((b) => b.ref === lesson.slug);
 
@@ -35,13 +61,29 @@ export function LessonView({ lesson }: { lesson: Lesson }) {
     () =>
       lesson.sections.map((section) => {
         const tasks = section.blocks.filter((b) => interactiveKinds.has(b.kind));
+        // A section of pure exposition has nothing to answer, so it had no
+        // way to ever complete — and because its ratio stayed at zero, its
+        // minutes never counted either, quietly capping the whole lesson
+        // below 100%. Such a section gets one task: saying you have read it.
+        if (tasks.length === 0) {
+          const done = completedBlocks.has(readMarker(section.id)) ? 1 : 0;
+          return {
+            id: section.id,
+            total: 1,
+            done,
+            duration: section.endMinute - section.startMinute,
+            ratio: done,
+            readOnly: true,
+          };
+        }
         const done = tasks.filter((b) => completedBlocks.has(b.id)).length;
         return {
           id: section.id,
           total: tasks.length,
           done,
           duration: section.endMinute - section.startMinute,
-          ratio: tasks.length === 0 ? 0 : done / tasks.length,
+          ratio: done / tasks.length,
+          readOnly: false,
         };
       }),
     [lesson.sections, completedBlocks],
@@ -50,7 +92,14 @@ export function LessonView({ lesson }: { lesson: Lesson }) {
   const minutesDone = Math.round(
     sectionStats.reduce((sum, s) => sum + s.ratio * s.duration, 0),
   );
-  const percent = Math.round((minutesDone / lesson.totalMinutes) * 100);
+  // The denominator is the minutes the sections actually account for, not the
+  // lesson's declared total. If the two ever drift apart — a section edited,
+  // a total left stale — deriving from the declared number silently caps the
+  // lesson below 100% with no section left to complete, which is precisely
+  // the failure this progress bar is supposed to make visible.
+  const minutesTotal = sectionStats.reduce((sum, s) => sum + s.duration, 0);
+  const percent =
+    minutesTotal === 0 ? 0 : Math.round((minutesDone / minutesTotal) * 100);
 
   const [activeSection, setActiveSection] = useState(lesson.sections[0]?.id ?? "");
 
@@ -94,7 +143,7 @@ export function LessonView({ lesson }: { lesson: Lesson }) {
               </span>
               <span className="ml-4 shrink-0 font-mono text-fg">
                 {minutesDone}{" "}
-                <span className="text-subtle">/ {lesson.totalMinutes} minutes</span>
+                <span className="text-subtle">/ {minutesTotal} minutes</span>
               </span>
             </div>
             <ProgressBar value={percent} height={4} className="mt-2" />
@@ -267,6 +316,29 @@ export function LessonView({ lesson }: { lesson: Lesson }) {
                     </div>
                   ))}
                 </div>
+
+                {/* Nothing to answer here, so completion has to be claimed
+                    rather than earned. Explicit beats auto-marking on scroll:
+                    the learner says they have read it. */}
+                {stat.readOnly ? (
+                  <div className="border-t border-line pt-4">
+                    {stat.done ? (
+                      <Badge tone="done">
+                        <IconCheck size={10} />
+                        Marked as read
+                      </Badge>
+                    ) : (
+                      <Button
+                        tone="secondary"
+                        size="sm"
+                        onClick={() => handleComplete(readMarker(section.id))}
+                      >
+                        <IconCheck size={13} />
+                        Mark this section as read
+                      </Button>
+                    )}
+                  </div>
+                ) : null}
               </section>
             );
           })}
@@ -279,7 +351,7 @@ export function LessonView({ lesson }: { lesson: Lesson }) {
               </span>
               <div>
                 <h3 className="text-[14.5px] font-semibold text-fg">
-                  {percent >= 100 ? "Day 1 complete" : `${formatMinutes(minutesDone)} of ${formatMinutes(lesson.totalMinutes)} done`}
+                  {percent >= 100 ? `Day ${lesson.dayNumber} complete` : `${formatMinutes(minutesDone)} of ${formatMinutes(minutesTotal)} done`}
                 </h3>
                 <p className="mt-1 max-w-lg text-[13px] leading-relaxed text-muted">
                   {percent >= 100

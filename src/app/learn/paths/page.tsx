@@ -7,6 +7,7 @@ import { ANDROID_ENGINEER_PATH } from "@/data/path";
 import { useProgress } from "@/lib/progress/context";
 import { moduleProgress } from "@/lib/progress/selectors";
 import { ALL_LESSONS } from "@/data/lessons";
+import { lessonCompletion } from "@/lib/progress/lessons";
 import { topicLabel } from "@/data/topics";
 import type { Difficulty } from "@/lib/types";
 import {
@@ -27,7 +28,15 @@ export default function LearningPathPage() {
     () =>
       path.modules.map((module, i) => {
         const p = moduleProgress(progress, module.topics);
-        return { module, p, index: i };
+        // A module is lessons *and* exercises. The bar below only ever
+        // counted exercises, so finishing an entire 120-minute lesson moved
+        // nothing on this page — the one place you go to see how far through
+        // the course you are.
+        const lesson = ALL_LESSONS.find((l) => l.moduleId === module.id) ?? null;
+        const lessonPercent = lesson
+          ? lessonCompletion(progress, lesson).percent
+          : null;
+        return { module, p, lesson, lessonPercent, index: i };
       }),
     [path.modules, progress],
   );
@@ -76,7 +85,7 @@ export default function LearningPathPage() {
       />
 
       <ol className="space-y-3">
-        {modules.map(({ module, p, index }) => {
+        {modules.map(({ module, p, lesson, lessonPercent, index }) => {
           // A module with a lesson written for it is never locked. The
           // lesson is the designed way in, and the unlock rule walks the
           // modules in curriculum order — which stopped matching reality
@@ -84,7 +93,7 @@ export default function LearningPathPage() {
           // m04, so under the old rule it sat behind an m01 exercise bar
           // with no button on the card at all, and the only links near it
           // went to the practice list.
-          const hasLesson = Boolean(lessonForModule(module.id));
+          const hasLesson = lesson !== null;
           const locked = !hasLesson && index + 1 > unlockedUpTo && p.percent === 0;
           const complete = p.percent !== null && p.percent >= 100;
 
@@ -132,13 +141,15 @@ export default function LearningPathPage() {
                 total={p.total}
                 outcomes={module.outcomes}
                 locked={locked}
+                lessonTitle={lesson ? `Day ${lesson.dayNumber} · ${lesson.title}` : null}
+                lessonPercent={lessonPercent}
                 href={
                   // Derived, not hardcoded: a module with a lesson opens the
                   // lesson, everything else opens its exercises. Pinning
                   // "m01" here meant every lesson written after Day 1 would
                   // be unreachable from the path with nothing to show for it.
-                  lessonForModule(module.id)?.slug
-                    ? `/lessons/${lessonForModule(module.id)!.slug}`
+                  lesson
+                    ? `/lessons/${lesson.slug}`
                     : `/practice?topic=${module.topics[0]}`
                 }
               />
@@ -170,6 +181,8 @@ function ModuleCard({
   outcomes,
   locked,
   href,
+  lessonTitle,
+  lessonPercent,
 }: {
   index: number;
   title: string;
@@ -185,6 +198,8 @@ function ModuleCard({
   outcomes: string[];
   locked: boolean;
   href: string;
+  lessonTitle: string | null;
+  lessonPercent: number | null;
 }) {
   // No exercises mapped to this module yet. Saying so is the honest render;
   // a 0% bar reads as "you have done none of it" when the truth is that
@@ -233,6 +248,21 @@ function ModuleCard({
         <span className="text-faint">{topics.slice(0, 3).join(" · ")}</span>
       </div>
 
+      {lessonTitle !== null && lessonPercent !== null ? (
+        <div className="mt-4 rounded-lg border border-line bg-surface-2/40 p-3">
+          <div className="mb-2 flex items-center justify-between gap-3">
+            <span className="mono-label truncate text-accent">{lessonTitle}</span>
+            <span className="mono-meta shrink-0 text-subtle">
+              {lessonPercent}%
+            </span>
+          </div>
+          {/* Lessons and exercises are separate kinds of work and are shown
+              separately. Blending them into one number would need a weighting
+              nobody could defend — two honest figures beat one invented one. */}
+          <ProgressBar value={lessonPercent} tone="accent" />
+        </div>
+      ) : null}
+
       <div className="mt-4 flex items-center gap-3">
         {empty ? (
           <>
@@ -253,7 +283,15 @@ function ModuleCard({
                 href={href}
                 className="mono-meta inline-flex shrink-0 items-center gap-1.5 rounded-md border border-line bg-surface-2 px-2.5 py-1.5 text-fg-dim transition-colors hover:border-line-strong hover:text-accent"
               >
-                {(percent ?? 0) > 0 ? "Continue" : "Start"}
+                {lessonPercent !== null
+                  ? lessonPercent >= 100
+                    ? "Review"
+                    : lessonPercent > 0
+                      ? "Continue"
+                      : "Start"
+                  : (percent ?? 0) > 0
+                    ? "Continue"
+                    : "Start"}
                 <IconArrowRight size={12} />
               </Link>
             ) : null}

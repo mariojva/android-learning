@@ -11,7 +11,7 @@ import { IconClock, IconArrowRight, IconSitemap } from "@/components/icons";
 export const metadata: Metadata = {
   title: "Android System Design",
   description:
-    "Long-form design exercises worked through fourteen stages, from requirements to testing.",
+    `Long-form design exercises worked through ${DESIGN_STAGE_TITLES.length} stages, from requirements to testing.`,
 };
 
 export default function SystemDesignPage() {
@@ -20,7 +20,7 @@ export default function SystemDesignPage() {
       <PageHeader
         kicker="System design"
         title="Android System Design"
-        subtitle="Long-form exercises where the answer is a defended design, not a diagram. Each one walks the same fourteen stages, so the method transfers to a prompt you have never seen."
+        subtitle={`Long-form exercises where the answer is a defended design, not a diagram. Each one walks the same ${DESIGN_STAGE_TITLES.length} stages, so the method transfers to a prompt you have never seen.`}
       />
 
       {/* ------------------------- The method -------------------------- */}

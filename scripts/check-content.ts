@@ -10,6 +10,8 @@
  *
  * Run with:  npm run check:content
  */
+import { readdirSync, readFileSync } from "node:fs";
+import { join } from "node:path";
 import { ALL_QUESTIONS } from "../src/data/questions/index";
 import { ALL_LESSONS } from "../src/data/lessons/index";
 import { ANDROID_ENGINEER_PATH } from "../src/data/path";
@@ -113,6 +115,44 @@ for (const c of CONCEPTS) {
     fail(`concept ${c.id} points at a missing glossary entry: ${c.glossaryId}`);
   }
 }
+
+/* ---------------------- claimed counts in the UI ------------------------ */
+
+/**
+ * A number written out in prose is a claim that stops being true silently.
+ * The knowledge graph said "Sixty concepts" while rendering 69 of them, two
+ * lines above a badge showing the real figure. Nothing failed; the page just
+ * lied.
+ *
+ * This is a heuristic — prose legitimately contains number words — so it
+ * notes rather than fails. Every hit should either be derived from the data
+ * or be a genuine phrase rather than a count.
+ */
+const NUMBER_WORD =
+  /\b(two|three|four|five|six|seven|eight|nine|ten|eleven|twelve|thirteen|fourteen|fifteen|sixteen|twenty|thirty|forty|fifty|sixty|seventy|eighty|ninety|hundred|twenty-eight)\s+(concepts?|weeks?|areas?|stages?|modules?|questions?|exercises?|lessons?|days?|entries|topics?|sections?)\b/gi;
+
+function scanForClaimedCounts(dir: string) {
+  for (const entry of readdirSync(dir, { withFileTypes: true })) {
+    const full = join(dir, entry.name);
+    if (entry.isDirectory()) {
+      scanForClaimedCounts(full);
+      continue;
+    }
+    if (!/\.tsx?$/.test(entry.name)) continue;
+    // Strip comments first, including block-comment interiors — otherwise
+    // the explanation above matches itself and every design note becomes a
+    // false positive, which is how a check stops being read.
+    const text = readFileSync(full, "utf8")
+      .replace(/\/\*[\s\S]*?\*\//g, "")
+      .replace(/^\s*\/\/.*$/gm, "");
+    for (const line of text.split("\n")) {
+      const hit = line.match(NUMBER_WORD);
+      if (hit) note(`${full}: claims "${hit[0]}" in prose — derive it instead?`);
+    }
+  }
+}
+scanForClaimedCounts("src/app");
+scanForClaimedCounts("src/components");
 
 /* -------------------------------- report -------------------------------- */
 

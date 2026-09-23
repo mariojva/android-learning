@@ -128,3 +128,10 @@ export function nextLesson(
   const last = ALL_LESSONS[ALL_LESSONS.length - 1];
   return { lesson: last, percent: 100 };
 }
+
+/** The lesson that follows this one in the registry, if one is written. */
+export function lessonAfter(lesson: Lesson): Lesson | null {
+  const i = ALL_LESSONS.findIndex((l) => l.id === lesson.id);
+  if (i === -1 || i + 1 >= ALL_LESSONS.length) return null;
+  return ALL_LESSONS[i + 1];
+}

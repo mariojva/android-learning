@@ -1,8 +1,7 @@
 import { Suspense } from "react";
 import type { Metadata } from "next";
-import { PageHeader } from "@/components/ui/primitives";
 import { QuestionBrowser } from "@/components/practice/QuestionBrowser";
-import { QUESTION_COUNTS } from "@/data/questions";
+import { PracticeHeader } from "@/components/practice/PracticeHeader";
 
 export const metadata: Metadata = {
   title: "All Practice Questions",
@@ -13,12 +12,10 @@ export const metadata: Metadata = {
 export default function PracticePage() {
   return (
     <div>
-      <PageHeader
-        kicker={`${QUESTION_COUNTS.total} questions`}
-        title="All Practice Questions"
-        subtitle="Master Kotlin and Android through carefully designed coding, architecture, debugging, and interview exercises."
-      />
+      {/* Both of these read the topic query parameter, so both sit inside
+          the Suspense boundary a static export requires. */}
       <Suspense fallback={<div className="h-64" />}>
+        <PracticeHeader />
         <QuestionBrowser />
       </Suspense>
     </div>

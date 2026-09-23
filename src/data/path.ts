@@ -451,7 +451,7 @@ const MODULES: Module[] = SPECS.map((spec, i) => ({
 export const ANDROID_ENGINEER_PATH: LearningPath = {
   id: "android-engineer",
   title: "Android Engineer Path",
-  tagline: "Twenty-eight modules, ordered by what depends on what.",
+  tagline: `${MODULES.length} modules, ordered by what depends on what.`,
   summary:
     "From language semantics to owning a feature in production. Each module ends when you can predict, implement, break and explain — not when you have read the last page.",
   modules: MODULES,

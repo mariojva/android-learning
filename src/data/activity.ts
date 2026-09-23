@@ -14,6 +14,13 @@ import { isoDate, seededRandom } from "@/lib/utils";
 
 const DAYS = 364;
 
+/**
+ * How much history the signed-out demo generates. Settings describes this to
+ * the user before they erase it, and described it as "twelve weeks" while it
+ * was really a year.
+ */
+export const HISTORY_DAYS = DAYS;
+
 /* ------------------------- Date arithmetic ------------------------- */
 
 function parseISO(iso: string): Date {

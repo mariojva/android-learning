@@ -20,6 +20,7 @@ import {
   completedBlocksFor,
   sectionStatsFor,
   readMarker,
+  lessonAfter,
 } from "@/lib/progress/lessons";
 
 export function LessonView({ lesson }: { lesson: Lesson }) {
@@ -40,6 +41,8 @@ export function LessonView({ lesson }: { lesson: Lesson }) {
     () => completedBlocksFor(progress, lesson),
     [progress, lesson],
   );
+
+  const next = lessonAfter(lesson);
 
   const bookmarked = progress.bookmarks.some((b) => b.ref === lesson.slug);
 
@@ -313,8 +316,15 @@ export function LessonView({ lesson }: { lesson: Lesson }) {
                   {percent >= 100 ? `Day ${lesson.dayNumber} complete` : `${formatMinutes(minutesDone)} of ${formatMinutes(minutesTotal)} done`}
                 </h3>
                 <p className="mt-1 max-w-lg text-[13px] leading-relaxed text-muted">
+                  {/* This used to be a fixed sentence about sealed
+                      hierarchies and "today's collections work" — Day 1's
+                      content, shown at the end of every lesson. Now it names
+                      whatever actually comes next, or says so when nothing
+                      does. */}
                   {percent >= 100
-                    ? "Tomorrow: sealed hierarchies in depth, and the first ViewModel. In the meantime, the review queue will bring today's collections work back in about three weeks."
+                    ? next
+                      ? `Next: Day ${next.dayNumber} — ${next.title}. In the meantime, the review queue will bring today's work back before you have forgotten it.`
+                      : "That is the last lesson written so far. The review queue will bring today's work back before you have forgotten it, and Practice has the full exercise bank in the meantime."
                     : "Finish the remaining tasks, or come back tomorrow — the plan assumes two focused hours, not two heroic ones."}
                 </p>
               </div>

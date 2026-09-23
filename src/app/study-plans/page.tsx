@@ -9,7 +9,7 @@ import { formatMinutes } from "@/lib/utils";
 export const metadata: Metadata = {
   title: "Study Plans",
   description:
-    "Twelve weeks at roughly two hours a day, pairing Kotlin with the Android idea it unlocks.",
+    `${STUDY_PLAN.length} weeks at roughly two hours a day, pairing Kotlin with the Android idea it unlocks.`,
 };
 
 export default function StudyPlansPage() {
@@ -17,7 +17,7 @@ export default function StudyPlansPage() {
     <div>
       <PageHeader
         kicker="Study plans"
-        title="Twelve Weeks to Android Interview Ready"
+        title={`${STUDY_PLAN.length} Weeks to Android Interview Ready`}
         subtitle="Roughly two focused hours a day. Each week pairs the Kotlin you need with the Android idea it unlocks, and closes with the interview pattern that keeps the DSA muscle warm."
       />
 

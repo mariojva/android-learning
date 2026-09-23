@@ -186,7 +186,7 @@ export function readyToStart(
 /* --------------------------- Spaced review -------------------------- */
 
 /** Widening gaps: a concept you keep getting right should ask less often. */
-const REVIEW_DAYS = [1, 3, 7, 16, 35];
+export const REVIEW_DAYS = [1, 3, 7, 16, 35];
 
 export function reviewIntervalDays(clearedCount: number): number {
   return REVIEW_DAYS[Math.min(clearedCount, REVIEW_DAYS.length - 1)];

@@ -4,7 +4,7 @@ import { buildSessions, currentStreak, longestStreak } from "./activity";
 import { isoDate, seededRandom } from "@/lib/utils";
 
 /**
- * A plausible twelve weeks of history, generated deterministically so the
+ * A plausible year of history (see HISTORY_DAYS), generated deterministically so the
  * dashboard is a populated product on first run rather than an empty shell.
  *
  * Every displayed figure — mastery, accuracy, difficulty split — is derived

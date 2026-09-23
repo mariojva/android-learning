@@ -161,11 +161,6 @@ export default function LearningPathPage() {
   );
 }
 
-/** The first lesson written for a module, if any. */
-function lessonForModule(moduleId: string) {
-  return ALL_LESSONS.find((l) => l.moduleId === moduleId);
-}
-
 function ModuleCard({
   index,
   title,
@@ -236,7 +231,9 @@ function ModuleCard({
       <div className="mono-meta mt-4 flex flex-wrap items-center gap-x-4 gap-y-2 text-subtle">
         <span className="inline-flex items-center gap-1.5">
           <IconBook size={12} />
-          {lessons} lessons
+          {lessons === 0
+            ? "No lesson yet"
+            : `${lessons} lesson${lessons === 1 ? "" : "s"}`}
         </span>
         <span className="inline-flex items-center gap-1.5">
           <IconTarget size={12} />
@@ -283,15 +280,18 @@ function ModuleCard({
                 href={href}
                 className="mono-meta inline-flex shrink-0 items-center gap-1.5 rounded-md border border-line bg-surface-2 px-2.5 py-1.5 text-fg-dim transition-colors hover:border-line-strong hover:text-accent"
               >
+                {/* A module with a lesson opens the lesson; one without
+                    opens its exercises. Labelling both "Start" made the
+                    second look like the first had broken. */}
                 {lessonPercent !== null
                   ? lessonPercent >= 100
-                    ? "Review"
+                    ? "Review lesson"
                     : lessonPercent > 0
-                      ? "Continue"
-                      : "Start"
+                      ? "Continue lesson"
+                      : "Start lesson"
                   : (percent ?? 0) > 0
-                    ? "Continue"
-                    : "Start"}
+                    ? "Keep practising"
+                    : "Practise"}
                 <IconArrowRight size={12} />
               </Link>
             ) : null}

@@ -77,7 +77,7 @@ export default function KnowledgeGraphPage() {
       <PageHeader
         kicker="Knowledge graph"
         title="What depends on what"
-        subtitle="Sixty concepts in dependency order. Open one to see what it needs first, what it unlocks, and how far along you are."
+        subtitle={`${CONCEPTS.length} concepts in dependency order. Open one to see what it needs first, what it unlocks, and how far along you are.`}
         right={
           <div className="flex flex-wrap gap-1.5">
             {(

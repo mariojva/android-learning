@@ -10,6 +10,7 @@ import {
   type ConceptProgress,
   type OwnershipProgress,
 } from "@/lib/progress/mastery";
+import { REVIEW_DAYS } from "@/lib/progress/mastery";
 import { MASTERY_STAGES, type ConceptProficiency } from "@/lib/types";
 import { cn } from "@/lib/utils";
 
@@ -221,7 +222,8 @@ export function ConceptReviewPanel({ items }: { items: ConceptProgress[] }) {
       {items.length === 0 ? (
         <p className="text-[13px] leading-relaxed text-muted">
           Nothing due. Concepts come back on a widening schedule — a day after
-          you first meet one, five weeks after you can reason about it.
+          you first meet one, {Math.round(REVIEW_DAYS[REVIEW_DAYS.length - 1] / 7)}{" "}
+          weeks after you can reason about it.
         </p>
       ) : (
         <ul className="space-y-2.5">

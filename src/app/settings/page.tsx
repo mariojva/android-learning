@@ -7,6 +7,7 @@ import { useProgress } from "@/lib/progress/context";
 import { useAuth } from "@/lib/auth/AuthProvider";
 import { USER } from "@/data/profile";
 import { QUESTION_COUNTS } from "@/data/questions";
+import { HISTORY_DAYS } from "@/data/activity";
 import { STORAGE_KEY } from "@/lib/progress/repository";
 import {
   IconSettings,
@@ -18,6 +19,9 @@ import {
   IconLock,
   IconArrowRight,
 } from "@/components/icons";
+
+/** Whole weeks of generated demo history, so the copy cannot drift from it. */
+const demoWeeks = Math.round(HISTORY_DAYS / 7);
 
 export default function SettingsPage() {
   const {
@@ -354,8 +358,8 @@ export default function SettingsPage() {
 
           <p className="mt-4 text-[12.5px] leading-relaxed text-subtle">
             {mode === "account"
-              ? "Erasing deletes every row this account owns — attempts, bookmarks, notes, lesson progress and study days. It cannot be undone. Loading the demo history writes the generated twelve weeks into your account, which is useful for seeing a populated dashboard and useless as a record of anything."
-              : "The signed-out experience ships with a generated twelve weeks of history so the dashboard is a populated product rather than an empty shell. Clearing starts you at zero. Neither touches the question bank."}
+              ? `Erasing deletes every row this account owns — attempts, bookmarks, notes, lesson progress and study days. It cannot be undone. Loading the demo history writes the generated ${demoWeeks} weeks into your account, which is useful for seeing a populated dashboard and useless as a record of anything.`
+              : `The signed-out experience ships with a generated ${demoWeeks} weeks of history so the dashboard is a populated product rather than an empty shell. Clearing starts you at zero. Neither touches the question bank.`}
           </p>
         </Card>
 

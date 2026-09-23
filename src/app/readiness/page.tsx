@@ -131,7 +131,7 @@ export default function ReadinessPage() {
       <PageHeader
         kicker="Mid-level readiness"
         title="What you could be handed"
-        subtitle="Not a score. Fifteen capability areas, each with its bar written out, so you can check the label against what it claims."
+        subtitle={`Not a score. ${CAPABILITY_AREAS.length} capability areas, each with its bar written out, so you can check the label against what it claims.`}
         right={
           <Badge tone={proficient > 0 ? "accent" : "neutral"}>
             {proficient} of {areas.length} proficient or above

@@ -54,6 +54,7 @@ import {
   masteryFor,
 } from "@/lib/progress/mastery";
 import { nextLesson } from "@/lib/progress/lessons";
+import { STUDY_PLAN } from "@/data/studyPlan";
 import { formatMinutes, greetingFor } from "@/lib/utils";
 import { useAuth } from "@/lib/auth/AuthProvider";
 import {
@@ -296,7 +297,7 @@ export default function DashboardPage() {
             </span>
             <div>
               <h3 className="text-[14.5px] font-semibold text-fg">
-                Twelve weeks, two hours a day
+                {STUDY_PLAN.length} weeks, two hours a day
               </h3>
               <p className="mt-1 max-w-lg text-[13px] leading-relaxed text-muted">
                 The study plan pairs the Kotlin you need with the Android idea it

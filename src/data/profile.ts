@@ -64,11 +64,3 @@ export function todayPlan(completedMinutes: number): DailyPlan {
 }
 
 /** Where "Continue learning" points, and what it says. */
-export const CONTINUE = {
-  moduleTitle: "Kotlin Foundations",
-  moduleId: "m01",
-  dayLabel: "Day 1 — Collections & Transformations",
-  href: "/lessons/day-1",
-  progressPercent: 0,
-  minutes: 120,
-};

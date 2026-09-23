@@ -16,7 +16,7 @@ import {
 } from "@/components/icons";
 import { cn, formatMinutes, difficultyStyles } from "@/lib/utils";
 import type { DailyPlanSlot, Difficulty, ReviewItem, TopicMastery, QuestionTrack } from "@/lib/types";
-import { CONTINUE } from "@/data/profile";
+import type { Lesson } from "@/lib/types";
 import { topicLabel } from "@/data/topics";
 
 /* ------------------------------ Stat tile -------------------------- */
@@ -55,7 +55,20 @@ export function StatTile({
 
 /* --------------------------- Continue card ------------------------- */
 
-export function ContinueCard({ percent }: { percent: number }) {
+/**
+ * The next lesson to sit down with — never a fixed one. This card used to
+ * read from a hardcoded CONTINUE constant pinned to Day 1, so once a second
+ * lesson existed it went on offering the finished one.
+ */
+export function ContinueCard({
+  lesson,
+  percent,
+}: {
+  lesson: Lesson | null;
+  percent: number;
+}) {
+  if (!lesson) return null;
+  const done = percent >= 100;
   return (
     <Card className="relative overflow-hidden border-line-strong">
       <div className="grid-noise pointer-events-none absolute inset-0 opacity-[0.35]" />
@@ -66,9 +79,11 @@ export function ContinueCard({ percent }: { percent: number }) {
             Continue learning
           </div>
           <h2 className="text-[19px] font-semibold tracking-tight text-fg">
-            {CONTINUE.moduleTitle}
+            {lesson.title}
           </h2>
-          <p className="mt-1 text-[13.5px] text-muted">{CONTINUE.dayLabel}</p>
+          <p className="mt-1 text-[13.5px] text-muted">
+            Day {lesson.dayNumber} · {lesson.goal}
+          </p>
 
           <div className="mt-4 flex items-center gap-3">
             <ProgressBar value={percent} className="max-w-[220px]" />
@@ -76,8 +91,12 @@ export function ContinueCard({ percent }: { percent: number }) {
           </div>
         </div>
 
-        <LinkButton href={CONTINUE.href} tone="primary" className="shrink-0">
-          {percent > 0 ? "Continue" : "Start Day 1"}
+        <LinkButton
+          href={`/lessons/${lesson.slug}`}
+          tone="primary"
+          className="shrink-0"
+        >
+          {done ? "Review" : percent > 0 ? "Continue" : `Start Day ${lesson.dayNumber}`}
           <IconArrowRight size={15} />
         </LinkButton>
       </div>

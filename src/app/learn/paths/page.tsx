@@ -77,7 +77,15 @@ export default function LearningPathPage() {
 
       <ol className="space-y-3">
         {modules.map(({ module, p, index }) => {
-          const locked = index + 1 > unlockedUpTo && p.percent === 0;
+          // A module with a lesson written for it is never locked. The
+          // lesson is the designed way in, and the unlock rule walks the
+          // modules in curriculum order — which stopped matching reality
+          // the moment a lesson was written out of order. Day 2 belongs to
+          // m04, so under the old rule it sat behind an m01 exercise bar
+          // with no button on the card at all, and the only links near it
+          // went to the practice list.
+          const hasLesson = Boolean(lessonForModule(module.id));
+          const locked = !hasLesson && index + 1 > unlockedUpTo && p.percent === 0;
           const complete = p.percent !== null && p.percent >= 100;
 
           return (

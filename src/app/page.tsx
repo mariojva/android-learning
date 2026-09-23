@@ -53,7 +53,7 @@ import {
   proficiencyOf,
   masteryFor,
 } from "@/lib/progress/mastery";
-import { ALL_LESSONS } from "@/data/lessons";
+import { nextLesson } from "@/lib/progress/lessons";
 import { formatMinutes, greetingFor } from "@/lib/utils";
 import { useAuth } from "@/lib/auth/AuthProvider";
 import {
@@ -76,18 +76,6 @@ export default function DashboardPage() {
 
   const stats = useMemo(() => {
     const sessions = progress.sessions;
-    // Across every lesson, not just Day 1 — pinning this to one lesson
-    // meant the figure silently stopped counting the moment a second one
-    // was written.
-    const lessonBlocks = ALL_LESSONS.reduce(
-      (n, l) => n + (progress.lessonProgress[l.id]?.completedBlocks.length ?? 0),
-      0,
-    );
-    const totalBlocks = ALL_LESSONS.reduce(
-      (n, l) => n + l.sections.reduce((m, s) => m + s.blocks.length, 0),
-      0,
-    );
-
     return {
       solved: solvedCount(progress),
       accuracy: accuracy(progress),
@@ -103,8 +91,8 @@ export default function DashboardPage() {
       review: reviewQueue(progress),
       weak: weakAreas(progress),
       mastery: topicMastery(progress).slice(0, 6),
-      dayOnePercent:
-        totalBlocks === 0 ? 0 : Math.round((lessonBlocks / totalBlocks) * 100),
+      // The lesson to actually offer, and how far into it you are.
+      next: nextLesson(progress),
     };
   }, [progress]);
 
@@ -168,7 +156,10 @@ export default function DashboardPage() {
       {/* -------------------- Continue + today's plan --------------------- */}
       <section className="grid gap-5 lg:grid-cols-[1.55fr_1fr]">
         <div className="space-y-5">
-          <ContinueCard percent={stats.dayOnePercent} />
+          <ContinueCard
+            lesson={stats.next?.lesson ?? null}
+            percent={stats.next?.percent ?? 0}
+          />
 
           <div className="grid grid-cols-2 gap-4 sm:grid-cols-4">
             <StatTile

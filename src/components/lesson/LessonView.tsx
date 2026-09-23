@@ -16,14 +16,11 @@ import {
 } from "@/components/icons";
 import { cn, clockLabel, formatMinutes } from "@/lib/utils";
 import { useProgress } from "@/lib/progress/context";
-
-/**
- * The completion id for a section that has nothing to answer. Namespaced
- * with a colon so it can never collide with a real block id.
- */
-function readMarker(sectionId: string): string {
-  return `${sectionId}:read`;
-}
+import {
+  completedBlocksFor,
+  sectionStatsFor,
+  readMarker,
+} from "@/lib/progress/lessons";
 
 export function LessonView({ lesson }: { lesson: Lesson }) {
   const { progress, completeLessonBlock, resetLesson, toggleBookmark, addStudyMinutes } =
@@ -39,54 +36,16 @@ export function LessonView({ lesson }: { lesson: Lesson }) {
    * directions: the block is done when the question is solved, whenever
    * and however that happened.
    */
-  const completedBlocks = useMemo(() => {
-    const recorded = new Set(
-      progress.lessonProgress[lesson.id]?.completedBlocks ?? [],
-    );
-    for (const section of lesson.sections) {
-      for (const block of section.blocks) {
-        if (block.kind !== "implement" || !block.questionSlug) continue;
-        if (progress.attempts[block.questionSlug]?.solved) recorded.add(block.id);
-      }
-    }
-    return recorded;
-  }, [progress.lessonProgress, progress.attempts, lesson]);
+  const completedBlocks = useMemo(
+    () => completedBlocksFor(progress, lesson),
+    [progress, lesson],
+  );
 
   const bookmarked = progress.bookmarks.some((b) => b.ref === lesson.slug);
 
-  /** Interactive blocks are what "progress" means — prose is not a task. */
-  const interactiveKinds = new Set(["predict", "explain", "quiz", "implement"]);
-
   const sectionStats = useMemo(
-    () =>
-      lesson.sections.map((section) => {
-        const tasks = section.blocks.filter((b) => interactiveKinds.has(b.kind));
-        // A section of pure exposition has nothing to answer, so it had no
-        // way to ever complete — and because its ratio stayed at zero, its
-        // minutes never counted either, quietly capping the whole lesson
-        // below 100%. Such a section gets one task: saying you have read it.
-        if (tasks.length === 0) {
-          const done = completedBlocks.has(readMarker(section.id)) ? 1 : 0;
-          return {
-            id: section.id,
-            total: 1,
-            done,
-            duration: section.endMinute - section.startMinute,
-            ratio: done,
-            readOnly: true,
-          };
-        }
-        const done = tasks.filter((b) => completedBlocks.has(b.id)).length;
-        return {
-          id: section.id,
-          total: tasks.length,
-          done,
-          duration: section.endMinute - section.startMinute,
-          ratio: done / tasks.length,
-          readOnly: false,
-        };
-      }),
-    [lesson.sections, completedBlocks],
+    () => sectionStatsFor(lesson, completedBlocks),
+    [lesson, completedBlocks],
   );
 
   const minutesDone = Math.round(

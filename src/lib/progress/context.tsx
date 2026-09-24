@@ -335,6 +335,8 @@ export function ProgressProvider({ children }: { children: ReactNode }) {
           [lessonId]: {
             ...entry,
             completedBlocks: [...entry.completedBlocks, blockId],
+            // Stamped so a day spent inside a lesson counts as a day worked.
+            lastActiveAt: isoDate(new Date()),
           },
         },
       };

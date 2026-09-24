@@ -15,6 +15,12 @@ import {
 } from "@/components/dashboard/panels";
 import { ActivityHeatmap } from "@/components/dashboard/Heatmap";
 import {
+  currentStreak as activeStreak,
+  longestStreak as longestActiveStreak,
+  activeDayCount,
+  sessionsFromActivity,
+} from "@/lib/progress/activity";
+import {
   CurrentFocus,
   ConceptsInProgress,
   OwnershipPanel,
@@ -35,8 +41,6 @@ import {
   weakAreas,
 } from "@/lib/progress/selectors";
 import {
-  currentStreak,
-  longestStreak,
   minutesThisWeek,
   minutesToday,
   totalMinutes,
@@ -85,8 +89,12 @@ export default function DashboardPage() {
       hours: totalMinutes(sessions) / 60,
       week: minutesThisWeek(sessions),
       today: minutesToday(sessions),
-      current: currentStreak(sessions),
-      longest: longestStreak(sessions),
+      // Streaks come from days with evidence of work on them — an hour
+      // logged, or anything completed — not from a button being pressed.
+      current: activeStreak(progress),
+      longest: longestActiveStreak(progress),
+      activeDays: activeDayCount(progress),
+      heatmap: sessionsFromActivity(progress),
       difficulty: difficultyBreakdown(progress),
       tracks: trackBreakdown(progress),
       review: reviewQueue(progress),
@@ -131,6 +139,30 @@ export default function DashboardPage() {
             : "Continue building your Android engineering mental model."}
         </p>
       </header>
+
+      {/* ---------------------------- Activity --------------------------- */}
+      <section>
+        <Card className="p-5 sm:p-6">
+          <div className="mb-5 flex flex-wrap items-end justify-between gap-4">
+            <div>
+              <div className="mono-label mb-2 text-subtle">Activity</div>
+              <h2 className="text-[15px] font-semibold tracking-tight text-fg">
+                The last twelve months
+              </h2>
+              <p className="mono-meta mt-1.5 text-faint">
+                {stats.activeDays} days worked · a day counts for an hour
+                logged, or anything completed
+              </p>
+            </div>
+            <StreakStrip
+              current={stats.current}
+              longest={stats.longest}
+              weekMinutes={stats.week}
+            />
+          </div>
+          <ActivityHeatmap sessions={stats.heatmap} />
+        </Card>
+      </section>
 
       {/* ------------------------ Mastery ------------------------ */}
       {/*
@@ -197,26 +229,6 @@ export default function DashboardPage() {
           targetMinutes={USER.dailyTargetMinutes}
           completedMinutes={stats.today}
         />
-      </section>
-
-      {/* ---------------------------- Activity --------------------------- */}
-      <section>
-        <Card className="p-5 sm:p-6">
-          <div className="mb-5 flex flex-wrap items-end justify-between gap-4">
-            <div>
-              <div className="mono-label mb-2 text-subtle">Activity</div>
-              <h2 className="text-[15px] font-semibold tracking-tight text-fg">
-                The last twelve months
-              </h2>
-            </div>
-            <StreakStrip
-              current={stats.current}
-              longest={stats.longest}
-              weekMinutes={stats.week}
-            />
-          </div>
-          <ActivityHeatmap sessions={progress.sessions} />
-        </Card>
       </section>
 
       {/* ------------------------- Breakdown grid ------------------------ */}

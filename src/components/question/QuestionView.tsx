@@ -18,11 +18,16 @@ import {
 import { formatCount, formatLabels } from "@/lib/utils";
 import { topicLabel } from "@/data/topics";
 import { useProgress } from "@/lib/progress/context";
+import { useTimeOnTask } from "@/lib/progress/useTimeOnTask";
 import { isBookmarked, statusOf } from "@/lib/progress/selectors";
 import { lessonForQuestion } from "@/data/lessons";
 
 export function QuestionView({ question }: { question: Question }) {
   const { progress, toggleBookmark } = useProgress();
+
+  // Time spent on an exercise is study time too.
+  useTimeOnTask();
+
   const bookmarked = isBookmarked(progress, question.slug);
   const status = statusOf(progress, question);
 

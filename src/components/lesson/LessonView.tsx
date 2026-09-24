@@ -16,6 +16,7 @@ import {
 } from "@/components/icons";
 import { cn, clockLabel, formatMinutes } from "@/lib/utils";
 import { useProgress } from "@/lib/progress/context";
+import { useTimeOnTask } from "@/lib/progress/useTimeOnTask";
 import { CONCEPT_MAP } from "@/data/concepts";
 import {
   completedBlocksFor,
@@ -27,8 +28,11 @@ import {
 } from "@/lib/progress/lessons";
 
 export function LessonView({ lesson }: { lesson: Lesson }) {
-  const { progress, completeLessonBlock, resetLesson, toggleBookmark, addStudyMinutes } =
+  const { progress, completeLessonBlock, resetLesson, toggleBookmark } =
     useProgress();
+
+  // Time is measured while the lesson is open rather than self-reported.
+  useTimeOnTask();
 
   /**
    * Recorded completions, plus the ones that can be derived.
@@ -227,17 +231,6 @@ export function LessonView({ lesson }: { lesson: Lesson }) {
               })}
             </ol>
 
-            <div className="mt-5 border-t border-line pt-4">
-              <Button
-                tone="ghost"
-                size="sm"
-                className="w-full"
-                onClick={() => addStudyMinutes(15)}
-              >
-                <IconClock size={13} />
-                Log 15 minutes
-              </Button>
-            </div>
           </div>
         </aside>
 

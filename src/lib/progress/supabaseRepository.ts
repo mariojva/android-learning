@@ -62,7 +62,7 @@ export class SupabaseProgressRepository implements ProgressRepository {
         .eq("user_id", uid),
       this.supabase
         .from("lesson_progress")
-        .select("lesson_id, completed_blocks, completed_at")
+        .select("lesson_id, completed_blocks, completed_at, updated_at")
         .eq("user_id", uid),
       this.supabase
         .from("study_sessions")
@@ -168,6 +168,7 @@ export class SupabaseProgressRepository implements ProgressRepository {
       state.lessonProgress[row.lesson_id as string] = {
         completedBlocks: ((row.completed_blocks as string[] | null) ?? []).slice(),
         completedAt: (row.completed_at as string | null) ?? undefined,
+        lastActiveAt: row.updated_at ? toISODate(row.updated_at) : undefined,
       };
     }
 
@@ -377,7 +378,11 @@ export class SupabaseProgressRepository implements ProgressRepository {
           lesson_id: lessonId,
           completed_blocks: entry.completedBlocks,
           completed_at: entry.completedAt ?? null,
-          updated_at: new Date().toISOString(),
+          // Carries the last-worked date back on the next load, so lesson
+          // work still counts toward the streak on another device.
+          updated_at: entry.lastActiveAt
+            ? new Date(entry.lastActiveAt).toISOString()
+            : new Date().toISOString(),
         });
       }
     }

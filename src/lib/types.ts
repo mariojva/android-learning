@@ -575,7 +575,19 @@ export interface ProgressState {
   answers: Record<string, SavedAnswer>;
   /** Keyed by concept id. */
   conceptMastery: Record<string, ConceptMastery>;
-  lessonProgress: Record<string, { completedBlocks: string[]; completedAt?: string }>;
+  lessonProgress: Record<
+    string,
+    {
+      completedBlocks: string[];
+      completedAt?: string;
+      /**
+       * The last day anything in this lesson was completed. Without it,
+       * lesson work carried no date at all, so a day spent entirely inside
+       * a lesson was invisible to the streak.
+       */
+      lastActiveAt?: string;
+    }
+  >;
   sessions: StudySession[];
   /** Seeded so the dashboard is populated on first run. */
   streak: { current: number; longest: number; lastActiveDate: string };

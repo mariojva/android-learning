@@ -30,11 +30,14 @@ export function LessonBlockView({
   lessonId,
   completed,
   onComplete,
+  codeContext,
 }: {
   block: LessonBlock;
   lessonId: string;
   completed: boolean;
   onComplete: () => void;
+  /** The snippet this block's question is about, if there is one. */
+  codeContext?: string;
 }) {
   switch (block.kind) {
     case "prose":
@@ -48,6 +51,7 @@ export function LessonBlockView({
           lessonId={lessonId}
           completed={completed}
           onComplete={onComplete}
+          codeContext={codeContext}
         />
       );
     case "explain":
@@ -57,6 +61,7 @@ export function LessonBlockView({
           lessonId={lessonId}
           completed={completed}
           onComplete={onComplete}
+          codeContext={codeContext}
         />
       );
     case "quiz":
@@ -125,11 +130,13 @@ function Predict({
   lessonId,
   completed,
   onComplete,
+  codeContext,
 }: {
   block: LessonBlock;
   lessonId: string;
   completed: boolean;
   onComplete: () => void;
+  codeContext?: string;
 }) {
   const { progress, saveAnswer } = useProgress();
   const ref = lessonAnswerRef(lessonId, block.id);
@@ -230,6 +237,7 @@ function Predict({
               .filter(Boolean)
               .join("\n\n")}
             userAnswer={value}
+            codeContext={codeContext}
           />
         </div>
       ) : null}
@@ -264,11 +272,13 @@ function Explain({
   lessonId,
   completed,
   onComplete,
+  codeContext,
 }: {
   block: LessonBlock;
   lessonId: string;
   completed: boolean;
   onComplete: () => void;
+  codeContext?: string;
 }) {
   const { progress, saveAnswer } = useProgress();
   const ref = lessonAnswerRef(lessonId, block.id);
@@ -379,6 +389,7 @@ function Explain({
               prompt={explainPrompt(block)}
               referenceAnswer={block.answer ?? ""}
               userAnswer={value}
+              codeContext={codeContext}
             />
           </div>
         </div>

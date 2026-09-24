@@ -12,6 +12,8 @@ export interface GradeAnswerInput {
   prompt: string;
   referenceAnswer: string;
   userAnswer: string;
+  /** The code the question is about, when there is one. */
+  codeContext?: string;
 }
 
 /**

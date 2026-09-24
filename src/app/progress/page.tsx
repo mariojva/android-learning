@@ -4,6 +4,11 @@ import { useMemo } from "react";
 import Link from "next/link";
 import { PageHeader, Card, ProgressBar, Ring, Badge, DifficultyPill } from "@/components/ui/primitives";
 import { ActivityHeatmap } from "@/components/dashboard/Heatmap";
+import {
+  currentStreak as activeStreak,
+  longestStreak as longestActiveStreak,
+  sessionsFromActivity,
+} from "@/lib/progress/activity";
 import { StatTile, StreakStrip } from "@/components/dashboard/panels";
 import { useProgress } from "@/lib/progress/context";
 import {
@@ -18,8 +23,6 @@ import {
   weakAreas,
 } from "@/lib/progress/selectors";
 import {
-  currentStreak,
-  longestStreak,
   minutesThisWeek,
   totalMinutes,
 } from "@/data/activity";
@@ -40,8 +43,11 @@ export default function ProgressPage() {
       completion: courseCompletion(progress),
       hours: totalMinutes(progress.sessions) / 60,
       week: minutesThisWeek(progress.sessions),
-      current: currentStreak(progress.sessions),
-      longest: longestStreak(progress.sessions),
+      // Same derived rule as the dashboard. These were two separate
+      // calculations over two different inputs, so the pages disagreed.
+      current: activeStreak(progress),
+      longest: longestActiveStreak(progress),
+      heatmap: sessionsFromActivity(progress),
       difficulty: difficultyBreakdown(progress),
       tracks: trackBreakdown(progress),
       mastery,
@@ -107,7 +113,7 @@ export default function ProgressPage() {
               weekMinutes={data.week}
             />
           </div>
-          <ActivityHeatmap sessions={progress.sessions} />
+          <ActivityHeatmap sessions={data.heatmap} />
         </Card>
       </section>
 

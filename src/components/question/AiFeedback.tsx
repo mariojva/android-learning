@@ -12,6 +12,7 @@ import {
 import { useAuth } from "@/lib/auth/AuthProvider";
 import { useProgress } from "@/lib/progress/context";
 import { gradeAnswer, type AnswerFeedback } from "@/lib/ai/feedback";
+import { RichText } from "@/components/ui/RichText";
 
 type State =
   | { status: "idle" }
@@ -49,12 +50,19 @@ export function AiFeedback({
   prompt,
   referenceAnswer,
   userAnswer,
+  codeContext,
 }: {
   cacheRef?: string;
   questionTitle?: string;
   prompt: string;
   referenceAnswer: string;
   userAnswer: string;
+  /**
+   * The snippet the question is about. Without it the grader can say an
+   * answer is wrong but not *which line* was misread, which is the single
+   * most useful thing it could say.
+   */
+  codeContext?: string;
 }) {
   const { user, configured } = useAuth();
   const { progress, saveAnswer } = useProgress();
@@ -95,6 +103,7 @@ export function AiFeedback({
         prompt,
         referenceAnswer,
         userAnswer,
+        codeContext,
       });
       setState({ status: "done", result });
       if (cacheRef) {
@@ -167,9 +176,9 @@ export function AiFeedback({
           </button>
         ) : null}
       </div>
-      <p className="text-[13px] leading-relaxed text-muted">
-        {state.result.feedback}
-      </p>
+      <div className="whitespace-pre-line text-[13px] leading-relaxed text-muted">
+        <RichText>{state.result.feedback}</RichText>
+      </div>
     </div>
   );
 }

@@ -2,7 +2,7 @@
 
 import { useCallback, useMemo, useState, useEffect } from "react";
 import Link from "next/link";
-import type { Lesson } from "@/lib/types";
+import type { Lesson, LessonBlock } from "@/lib/types";
 import { LessonBlockView } from "./blocks";
 import { Card, Button, ProgressBar, Badge } from "@/components/ui/primitives";
 import {
@@ -26,6 +26,22 @@ import {
   lessonLabel,
   lessonLabelShort,
 } from "@/lib/progress/lessons";
+
+/**
+ * The closest `code` block at or above this one in the same section.
+ *
+ * A question about a snippet is nearly always a separate block from the
+ * snippet, so the AI grader was judging answers about code it had never
+ * seen — which is why it could tell a learner they were off track without
+ * being able to say that they had misread line two.
+ */
+function nearestCode(blocks: LessonBlock[], index: number): string | undefined {
+  for (let i = index; i >= 0; i -= 1) {
+    const b = blocks[i];
+    if (b.kind === "code" && b.code?.code) return b.code.code;
+  }
+  return undefined;
+}
 
 export function LessonView({ lesson }: { lesson: Lesson }) {
   const { progress, completeLessonBlock, resetLesson, toggleBookmark } =
@@ -265,10 +281,14 @@ export function LessonView({ lesson }: { lesson: Lesson }) {
                 </div>
 
                 <div className="space-y-6">
-                  {section.blocks.map((block) => (
+                  {section.blocks.map((block, bi) => (
                     <div key={block.id} className="animate-fade-up">
                       <LessonBlockView
                         block={block}
+                        // The code the question is about usually sits in an
+                        // earlier block, so the grader never saw it and could
+                        // not tell a learner they had misread the snippet.
+                        codeContext={nearestCode(section.blocks, bi)}
                         lessonId={lesson.id}
                         completed={completedBlocks.has(block.id)}
                         onComplete={() => handleComplete(block.id)}

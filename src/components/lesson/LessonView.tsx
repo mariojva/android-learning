@@ -16,11 +16,14 @@ import {
 } from "@/components/icons";
 import { cn, clockLabel, formatMinutes } from "@/lib/utils";
 import { useProgress } from "@/lib/progress/context";
+import { CONCEPT_MAP } from "@/data/concepts";
 import {
   completedBlocksFor,
   sectionStatsFor,
   readMarker,
   lessonAfter,
+  lessonLabel,
+  lessonLabelShort,
 } from "@/lib/progress/lessons";
 
 export function LessonView({ lesson }: { lesson: Lesson }) {
@@ -99,7 +102,7 @@ export function LessonView({ lesson }: { lesson: Lesson }) {
           <div className="min-w-0 flex-1">
             <div className="mono-meta flex items-center justify-between text-subtle">
               <span className="truncate">
-                <span className="text-accent">Day {lesson.dayNumber}</span>
+                <span className="text-accent">{lessonLabelShort(lesson)}</span>
                 <span className="mx-2 text-faint">·</span>
                 <span className="text-fg-dim">{lesson.title}</span>
               </span>
@@ -125,7 +128,7 @@ export function LessonView({ lesson }: { lesson: Lesson }) {
 
         <div className="mt-4 flex flex-wrap items-start justify-between gap-4">
           <div className="max-w-2xl">
-            <div className="mono-label mb-2.5 text-accent">{lesson.subtitle}</div>
+            <div className="mono-label mb-2.5 text-accent">{lessonLabel(lesson)}</div>
             <h1 className="text-[26px] font-semibold leading-tight tracking-tight text-fg sm:text-[30px]">
               {lesson.title}
             </h1>
@@ -156,13 +159,15 @@ export function LessonView({ lesson }: { lesson: Lesson }) {
         </div>
 
         <div className="mt-5 flex flex-wrap gap-1.5">
+          {/* Ids in the data, names on screen — one vocabulary, rendered. */}
           {lesson.concepts.map((c) => (
-            <span
+            <Link
               key={c}
-              className="mono-meta rounded-md border border-line bg-surface px-2 py-1 text-muted"
+              href={`/knowledge-graph#${c}`}
+              className="mono-meta rounded-md border border-line bg-surface px-2 py-1 text-muted transition-colors hover:border-line-strong hover:text-accent"
             >
-              {c}
-            </span>
+              {CONCEPT_MAP.get(c)?.name ?? c}
+            </Link>
           ))}
         </div>
       </header>
@@ -313,7 +318,7 @@ export function LessonView({ lesson }: { lesson: Lesson }) {
               </span>
               <div>
                 <h3 className="text-[14.5px] font-semibold text-fg">
-                  {percent >= 100 ? `Day ${lesson.dayNumber} complete` : `${formatMinutes(minutesDone)} of ${formatMinutes(minutesTotal)} done`}
+                  {percent >= 100 ? `${lesson.title} complete` : `${formatMinutes(minutesDone)} of ${formatMinutes(minutesTotal)} done`}
                 </h3>
                 <p className="mt-1 max-w-lg text-[13px] leading-relaxed text-muted">
                   {/* This used to be a fixed sentence about sealed
@@ -323,7 +328,7 @@ export function LessonView({ lesson }: { lesson: Lesson }) {
                       does. */}
                   {percent >= 100
                     ? next
-                      ? `Next: Day ${next.dayNumber} — ${next.title}. In the meantime, the review queue will bring today's work back before you have forgotten it.`
+                      ? `Next: ${lessonLabel(next)} — ${next.title}. In the meantime, the review queue will bring today's work back before you have forgotten it.`
                       : "That is the last lesson written so far. The review queue will bring today's work back before you have forgotten it, and Practice has the full exercise bank in the meantime."
                     : "Finish the remaining tasks, or come back tomorrow — the plan assumes two focused hours, not two heroic ones."}
                 </p>

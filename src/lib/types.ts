@@ -344,9 +344,13 @@ export interface Module {
   difficulty: Difficulty;
   lessonCount: number;
   exerciseCount: number;
+  /** Hours of material that exists today. Derived from lessons and exercises. */
   estimatedHours: number;
+  /** What the module is intended to grow into. Authored, and a target. */
+  plannedHours: number;
+  /** How many lessons this module is meant to have. A target, not a count. */
+  plannedLessons: number;
   topics: TopicId[];
-  /** Modules unlock in order; the first two are open from day one. */
   unlockedByDefault?: boolean;
   outcomes: string[];
 }
@@ -450,6 +454,14 @@ export interface Lesson {
   title: string;
   subtitle: string;
   goal: string;
+  /**
+   * Concept ids from src/data/concepts.ts — not prose.
+   *
+   * These were free text until Day 3, which meant nothing could compare what
+   * a module promised against what its lessons delivered: m01 declared ten
+   * concepts, Day 1 taught five, and the card said "1 lesson" with total
+   * confidence. Ids make coverage computable.
+   */
   concepts: string[];
   totalMinutes: number;
   sections: LessonSection[];

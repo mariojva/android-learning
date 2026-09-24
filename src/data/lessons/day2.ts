@@ -24,17 +24,7 @@ export const DAY_2: Lesson = {
   subtitle: "Day 2 · Module 04 — Android Runtime & Lifecycle",
   goal:
     "Understand who owns the lifetime of your objects, so that every state-holding decision becomes a consequence of that rather than a convention.",
-  concepts: [
-    "the system owns the process",
-    "configuration change",
-    "process death",
-    "lifecycle states",
-    "ViewModelStoreOwner",
-    "SavedStateHandle",
-    "state durability tiers",
-    "viewModelScope",
-    "Context leaks",
-  ],
+  concepts: ["lifecycle", "config-change", "viewmodel", "saved-state", "context"],
   totalMinutes: 120,
   sections: [
     /* --------------------------------------------------------------- */

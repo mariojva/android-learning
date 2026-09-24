@@ -22,6 +22,7 @@ import {
   IconBook,
   IconGrid,
   IconEye,
+  IconRefresh,
 } from "@/components/icons";
 
 export interface NavItem {
@@ -42,6 +43,7 @@ export const NAV: NavGroup[] = [
   {
     items: [
       { label: "Dashboard", href: "/", icon: IconDashboard },
+      { label: "Review", href: "/review", icon: IconRefresh, badge: "review" },
       { label: "Knowledge Graph", href: "/knowledge-graph", icon: IconSitemap },
     ],
   },
@@ -89,7 +91,7 @@ export const MOBILE_NAV: NavItem[] = [
   { label: "Home", href: "/", icon: IconDashboard },
   { label: "Learn", href: "/learn/paths", icon: IconPath },
   { label: "Practice", href: "/practice", icon: IconGrid },
-  { label: "Design", href: "/system-design", icon: IconSitemap },
+  { label: "Review", href: "/review", icon: IconRefresh },
   { label: "Progress", href: "/progress", icon: IconChart },
 ];
 

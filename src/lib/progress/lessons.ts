@@ -1,5 +1,6 @@
 import type { Lesson, ProgressState } from "@/lib/types";
 import { ALL_LESSONS } from "@/data/lessons";
+import { MODULE_MAP } from "@/data/path";
 
 /**
  * How far through a lesson someone is.
@@ -134,4 +135,39 @@ export function lessonAfter(lesson: Lesson): Lesson | null {
   const i = ALL_LESSONS.findIndex((l) => l.id === lesson.id);
   if (i === -1 || i + 1 >= ALL_LESSONS.length) return null;
   return ALL_LESSONS[i + 1];
+}
+
+/**
+ * Where this lesson sits in its module: "Lesson 2 of 3".
+ *
+ * Global "Day N" numbering hid the fact that a module needs several lessons —
+ * finishing Day 1 looked like finishing Kotlin Foundations, when it covered
+ * half of it. The position is derived from the registry and the denominator
+ * from the module's concept count, so neither can drift.
+ */
+export function lessonPosition(lesson: Lesson): {
+  index: number;
+  planned: number;
+} {
+  const inModule = ALL_LESSONS.filter((l) => l.moduleId === lesson.moduleId);
+  const index = inModule.findIndex((l) => l.id === lesson.id) + 1;
+  const planned = Math.max(
+    inModule.length,
+    MODULE_MAP.get(lesson.moduleId)?.plannedLessons ?? inModule.length,
+  );
+  return { index, planned };
+}
+
+/** "Module 02 · Lesson 1 of 2" — the one place this string is built. */
+export function lessonLabel(lesson: Lesson): string {
+  const { index, planned } = lessonPosition(lesson);
+  const moduleIndex = MODULE_MAP.get(lesson.moduleId)?.index ?? 0;
+  return `Module ${String(moduleIndex).padStart(2, "0")} · Lesson ${index} of ${planned}`;
+}
+
+/** Short form for tight spaces: "M02 · L1/2". */
+export function lessonLabelShort(lesson: Lesson): string {
+  const { index, planned } = lessonPosition(lesson);
+  const moduleIndex = MODULE_MAP.get(lesson.moduleId)?.index ?? 0;
+  return `M${String(moduleIndex).padStart(2, "0")} · L${index}/${planned}`;
 }

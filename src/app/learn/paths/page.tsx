@@ -7,12 +7,13 @@ import { ANDROID_ENGINEER_PATH } from "@/data/path";
 import { useProgress } from "@/lib/progress/context";
 import { moduleProgress } from "@/lib/progress/selectors";
 import { ALL_LESSONS } from "@/data/lessons";
-import { lessonCompletion } from "@/lib/progress/lessons";
+import { CONCEPTS } from "@/data/concepts";
+import { lessonCompletion, lessonLabel } from "@/lib/progress/lessons";
 import { topicLabel } from "@/data/topics";
 import type { Difficulty } from "@/lib/types";
 import {
-  IconLock,
   IconCheck,
+  IconSpark,
   IconArrowRight,
   IconClock,
   IconBook,
@@ -36,22 +37,45 @@ export default function LearningPathPage() {
         const lessonPercent = lesson
           ? lessonCompletion(progress, lesson).percent
           : null;
-        return { module, p, lesson, lessonPercent, index: i };
+        // How much of what this module promises its lessons actually teach.
+        // Without it, "1 lesson" reads as "finished" on a module that is
+        // half written.
+        const declared = CONCEPTS.filter((c) => c.moduleId === module.id);
+        const taught = new Set(
+          ALL_LESSONS.filter((l) => l.moduleId === module.id).flatMap(
+            (l) => l.concepts,
+          ),
+        );
+        const coverage = {
+          taught: declared.filter((c) => taught.has(c.id)).length,
+          total: declared.length,
+        };
+        return { module, p, lesson, lessonPercent, coverage, index: i };
       }),
     [path.modules, progress],
   );
 
-  // A module unlocks when the one before it is at least half done. A module
-  // with no exercises yet is not a gate — it has nothing to be half done of,
-  // so it passes the walk through rather than stopping it.
-  const unlockedUpTo = useMemo(() => {
-    let last = 1;
-    for (let i = 0; i < modules.length; i += 1) {
-      const percent = modules[i].p.percent;
-      if (percent === null || percent >= 50) last = i + 2;
-      else break;
-    }
-    return Math.max(last, 2);
+  /**
+   * Nothing is locked.
+   *
+   * The path used to gate each module behind the previous one reaching 50%,
+   * which left 25 of 28 modules shut — m20 Gradle sat behind nineteen
+   * modules of Kotlin foundations. For a single learner who is already a
+   * working Android engineer, that is friction with nothing on the other
+   * side of it: the curriculum order is guidance, the knowledge graph holds
+   * the real prerequisites, and a topic you are handed at work on Tuesday
+   * should not be behind a bar.
+   *
+   * What replaces it is a suggestion, not a gate: the first module that is
+   * not finished gets a "Start here" marker, and every module opens.
+   */
+  const recommendedIndex = useMemo(() => {
+    const i = modules.findIndex(
+      ({ p, lessonPercent }) =>
+        (lessonPercent !== null && lessonPercent < 100) ||
+        (p.percent !== null && p.percent < 100),
+    );
+    return i === -1 ? null : i;
   }, [modules]);
 
   // Empty modules are excluded from the average for the same reason: counting
@@ -85,17 +109,9 @@ export default function LearningPathPage() {
       />
 
       <ol className="space-y-3">
-        {modules.map(({ module, p, lesson, lessonPercent, index }) => {
-          // A module with a lesson written for it is never locked. The
-          // lesson is the designed way in, and the unlock rule walks the
-          // modules in curriculum order — which stopped matching reality
-          // the moment a lesson was written out of order. Day 2 belongs to
-          // m04, so under the old rule it sat behind an m01 exercise bar
-          // with no button on the card at all, and the only links near it
-          // went to the practice list.
-          const hasLesson = lesson !== null;
-          const locked = !hasLesson && index + 1 > unlockedUpTo && p.percent === 0;
+        {modules.map(({ module, p, lesson, lessonPercent, coverage, index }) => {
           const complete = p.percent !== null && p.percent >= 100;
+          const recommended = index === recommendedIndex;
 
           return (
             <li key={module.id} className="relative pl-7 sm:pl-9">
@@ -112,7 +128,7 @@ export default function LearningPathPage() {
                   "absolute left-0 top-6 flex h-[19px] w-[19px] items-center justify-center rounded-full ring-2 sm:left-1",
                   complete
                     ? "bg-done/15 text-done ring-done/30"
-                    : (p.percent ?? 0) > 0
+                    : recommended || (p.percent ?? 0) > 0
                       ? "bg-accent/15 text-accent ring-accent/30"
                       : "bg-surface-2 text-faint ring-line-strong",
                 )}
@@ -120,8 +136,6 @@ export default function LearningPathPage() {
               >
                 {complete ? (
                   <IconCheck size={11} />
-                ) : locked ? (
-                  <IconLock size={10} />
                 ) : (
                   <span className="h-1.5 w-1.5 rounded-full bg-current" />
                 )}
@@ -140,9 +154,10 @@ export default function LearningPathPage() {
                 solved={p.solved}
                 total={p.total}
                 outcomes={module.outcomes}
-                locked={locked}
-                lessonTitle={lesson ? `Day ${lesson.dayNumber} · ${lesson.title}` : null}
+                recommended={recommended}
+                lessonTitle={lesson ? `${lessonLabel(lesson)} · ${lesson.title}` : null}
                 lessonPercent={lessonPercent}
+                coverage={coverage}
                 href={
                   // Derived, not hardcoded: a module with a lesson opens the
                   // lesson, everything else opens its exercises. Pinning
@@ -174,10 +189,11 @@ function ModuleCard({
   solved,
   total,
   outcomes,
-  locked,
+  recommended,
   href,
   lessonTitle,
   lessonPercent,
+  coverage,
 }: {
   index: number;
   title: string;
@@ -191,10 +207,11 @@ function ModuleCard({
   solved: number;
   total: number;
   outcomes: string[];
-  locked: boolean;
+  recommended: boolean;
   href: string;
   lessonTitle: string | null;
   lessonPercent: number | null;
+  coverage: { taught: number; total: number };
 }) {
   // No exercises mapped to this module yet. Saying so is the honest render;
   // a 0% bar reads as "you have done none of it" when the truth is that
@@ -202,8 +219,8 @@ function ModuleCard({
   const empty = percent === null;
   return (
     <Card
-      interactive={!locked}
-      className={cn("p-5", locked && "opacity-55")}
+      interactive
+      className={cn("p-5", recommended && "border-accent/35")}
     >
       <div className="flex flex-wrap items-start justify-between gap-3">
         <div className="min-w-0">
@@ -219,10 +236,10 @@ function ModuleCard({
         </div>
         <div className="flex shrink-0 items-center gap-2">
           <DifficultyPill difficulty={difficulty} />
-          {locked ? (
-            <Badge>
-              <IconLock size={10} />
-              Locked
+          {recommended ? (
+            <Badge tone="accent">
+              <IconSpark size={10} />
+              Start here
             </Badge>
           ) : null}
         </div>
@@ -253,6 +270,12 @@ function ModuleCard({
               {lessonPercent}%
             </span>
           </div>
+          {coverage.total > 0 && coverage.taught < coverage.total ? (
+            <p className="mono-meta mb-2 text-faint">
+              Covers {coverage.taught} of {coverage.total} concepts in this
+              module — the rest are still to be written.
+            </p>
+          ) : null}
           {/* Lessons and exercises are separate kinds of work and are shown
               separately. Blending them into one number would need a weighting
               nobody could defend — two honest figures beat one invented one. */}
@@ -275,31 +298,29 @@ function ModuleCard({
             <span className="mono-meta shrink-0 text-subtle">
               {solved}/{total}
             </span>
-            {!locked ? (
-              <Link
-                href={href}
-                className="mono-meta inline-flex shrink-0 items-center gap-1.5 rounded-md border border-line bg-surface-2 px-2.5 py-1.5 text-fg-dim transition-colors hover:border-line-strong hover:text-accent"
-              >
-                {/* A module with a lesson opens the lesson; one without
-                    opens its exercises. Labelling both "Start" made the
-                    second look like the first had broken. */}
-                {lessonPercent !== null
-                  ? lessonPercent >= 100
-                    ? "Review lesson"
-                    : lessonPercent > 0
-                      ? "Continue lesson"
-                      : "Start lesson"
-                  : (percent ?? 0) > 0
-                    ? "Keep practising"
-                    : "Practise"}
-                <IconArrowRight size={12} />
-              </Link>
-            ) : null}
+            <Link
+              href={href}
+              className="mono-meta inline-flex shrink-0 items-center gap-1.5 rounded-md border border-line bg-surface-2 px-2.5 py-1.5 text-fg-dim transition-colors hover:border-line-strong hover:text-accent"
+            >
+              {/* A module with a lesson opens the lesson; one without opens
+                  its exercises. Labelling both "Start" made the second look
+                  like the first had broken. */}
+              {lessonPercent !== null
+                ? lessonPercent >= 100
+                  ? "Review lesson"
+                  : lessonPercent > 0
+                    ? "Continue lesson"
+                    : "Start lesson"
+                : (percent ?? 0) > 0
+                  ? "Keep practising"
+                  : "Practise"}
+              <IconArrowRight size={12} />
+            </Link>
           </>
         )}
       </div>
 
-      {outcomes.length > 0 && !locked ? (
+      {outcomes.length > 0 ? (
         <details className="mt-4 border-t border-line pt-3">
           <summary className="mono-label cursor-pointer text-subtle">
             What you will be able to do

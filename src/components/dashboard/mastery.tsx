@@ -216,7 +216,11 @@ export function ConceptReviewPanel({ items }: { items: ConceptProgress[] }) {
     <Card className="p-5">
       <div className="mb-4 flex items-center justify-between">
         <div className="mono-label text-subtle">Ready for review</div>
-        {items.length > 0 ? <Badge tone="warn">{items.length} due</Badge> : null}
+        {items.length > 0 ? (
+          <Link href="/review" className="shrink-0">
+            <Badge tone="warn">{items.length} due</Badge>
+          </Link>
+        ) : null}
       </div>
 
       {items.length === 0 ? (
@@ -226,6 +230,14 @@ export function ConceptReviewPanel({ items }: { items: ConceptProgress[] }) {
           weeks after you can reason about it.
         </p>
       ) : (
+        <>
+        <Link
+          href="/review"
+          className="mono-meta mb-3 inline-flex items-center gap-1.5 text-accent hover:underline"
+        >
+          Start a review session
+          <IconArrowRight size={12} />
+        </Link>
         <ul className="space-y-2.5">
           {items.slice(0, 6).map((p) => (
             <li
@@ -241,6 +253,7 @@ export function ConceptReviewPanel({ items }: { items: ConceptProgress[] }) {
             </li>
           ))}
         </ul>
+        </>
       )}
     </Card>
   );

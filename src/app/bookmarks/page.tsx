@@ -10,6 +10,7 @@ import { statusOf } from "@/lib/progress/selectors";
 import { QuestionCard } from "@/components/practice/QuestionCard";
 import { IconBookmark, IconNote, IconTrash, IconBook } from "@/components/icons";
 import { cn } from "@/lib/utils";
+import { lessonLabel } from "@/lib/progress/lessons";
 
 type Tab = "bookmarks" | "notes";
 
@@ -103,7 +104,7 @@ export default function BookmarksPage() {
                             </span>
                             <div className="min-w-0 flex-1">
                               <h3 className="text-[14.5px] font-semibold text-fg transition-colors group-hover:text-accent">
-                                Day {lesson.dayNumber} — {lesson.title}
+                                {lessonLabel(lesson)} — {lesson.title}
                               </h3>
                               <p className="mt-1.5 text-[13px] leading-relaxed text-muted">
                                 {lesson.goal}

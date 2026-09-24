@@ -9,16 +9,14 @@ export const DAY_1: Lesson = {
   subtitle: "Day 1 · Module 01 — Kotlin Foundations",
   goal:
     "Understand how Kotlin transforms data, and how that data becomes Android UI state.",
+  // Concept ids, checked against src/data/concepts.ts. Day 1 covers five of
+  // m01's ten; the rest wait for the next lesson in this module.
   concepts: [
-    "List vs MutableList",
-    "val vs var",
-    "map",
-    "filter",
-    "mapNotNull",
-    "associateBy",
-    "groupBy",
-    "firstOrNull",
+    "references",
+    "val-var",
+    "read-only-collections",
     "nullability",
+    "collection-operators",
   ],
   totalMinutes: 120,
   sections: [

@@ -47,13 +47,13 @@ import { QUESTION_COUNTS, ALL_QUESTIONS } from "@/data/questions";
 import { CONCEPTS } from "@/data/concepts";
 import {
   conceptsInProgress,
-  conceptsDueForReview,
   readyToStart,
   ownershipProgress,
   proficiencyOf,
   masteryFor,
 } from "@/lib/progress/mastery";
 import { nextLesson } from "@/lib/progress/lessons";
+import { reviewSchedule } from "@/lib/progress/review";
 import { STUDY_PLAN } from "@/data/studyPlan";
 import { formatMinutes, greetingFor } from "@/lib/utils";
 import { useAuth } from "@/lib/auth/AuthProvider";
@@ -109,7 +109,8 @@ export default function DashboardPage() {
       inProgress,
       focus: inProgress[0] ?? null,
       ready: readyToStart(progress, 4),
-      due: conceptsDueForReview(progress),
+      // The derived schedule, so the dashboard agrees with /review.
+      due: reviewSchedule(progress).map((d) => d.progress),
       ownership: ownershipProgress(progress, ALL_QUESTIONS),
     };
   }, [progress]);

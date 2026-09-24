@@ -116,6 +116,62 @@ for (const c of CONCEPTS) {
   }
 }
 
+/* ------------------------- content coverage ----------------------------- */
+
+/**
+ * Which modules are still mostly empty, measured rather than remembered.
+ *
+ * `estimatedHours` is now derived from the lessons and exercises that exist;
+ * `plannedHours` is what the module is meant to become. The gap between them
+ * is the build queue, and printing it on every run is what stops "go down the
+ * list" from quietly meaning "go down a list of placeholders".
+ */
+/* ------------------- what a lesson actually teaches ---------------------- */
+
+/**
+ * A lesson's `concepts` are ids now, so two things become checkable: that
+ * every id is real, and how much of a module its lessons actually cover.
+ *
+ * The second one is the gap that prompted this. m01 declares ten concepts and
+ * Day 1 teaches five — but the module card said "1 lesson" and the path moved
+ * straight on to m02, so finishing Day 1 read as finishing Kotlin Foundations.
+ */
+for (const lesson of ALL_LESSONS) {
+  for (const id of lesson.concepts) {
+    if (!conceptIds.has(id)) {
+      fail(`${lesson.slug} names a concept that does not exist: ${id}`);
+    }
+  }
+}
+
+for (const m of MODULES) {
+  const declared = CONCEPTS.filter((c) => c.moduleId === m.id).map((c) => c.id);
+  if (declared.length === 0) continue;
+  const taught = new Set(
+    ALL_LESSONS.filter((l) => l.moduleId === m.id).flatMap((l) => l.concepts),
+  );
+  const missing = declared.filter((id) => !taught.has(id));
+  if (missing.length > 0 && taught.size > 0) {
+    note(
+      `${m.id} teaches ${taught.size}/${declared.length} of its concepts — ` +
+        `untaught: ${missing.join(", ")}`,
+    );
+  }
+}
+
+const lessonless = MODULES.filter((m) => m.lessonCount === 0);
+if (lessonless.length > 0) {
+  // One line, not twenty-six: a check nobody can read is a check nobody runs.
+  const thinnest = [...lessonless]
+    .sort((a, b) => a.estimatedHours - b.estimatedHours)
+    .slice(0, 3)
+    .map((m) => `${m.id} ${m.estimatedHours}h`)
+    .join(", ");
+  note(
+    `${lessonless.length} of ${MODULES.length} modules have no lesson (thinnest: ${thinnest})`,
+  );
+}
+
 /* ---------------------- claimed counts in the UI ------------------------ */
 
 /**

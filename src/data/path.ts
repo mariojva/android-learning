@@ -1,6 +1,7 @@
 import type { LearningPath, Module, TopicId } from "@/lib/types";
 import { ALL_QUESTIONS } from "@/data/questions";
 import { ALL_LESSONS } from "@/data/lessons";
+import { CONCEPTS } from "@/data/concepts";
 
 /* ------------------------------------------------------------------
    The curriculum.
@@ -21,7 +22,8 @@ interface ModuleSpec {
   title: string;
   summary: string;
   difficulty: Module["difficulty"];
-  estimatedHours: number;
+  /** What this module is intended to grow into. A target, not a measurement. */
+  plannedHours: number;
   topics: TopicId[];
   unlockedByDefault?: boolean;
   outcomes: string[];
@@ -34,7 +36,7 @@ const SPECS: ModuleSpec[] = [
     summary:
       "References versus objects, nullability as a type, and why val is not immutability.",
     difficulty: "Warmup",
-    estimatedHours: 6,
+    plannedHours: 6,
     topics: ["kotlin", "collections"],
     unlockedByDefault: true,
     outcomes: [
@@ -49,7 +51,7 @@ const SPECS: ModuleSpec[] = [
     summary:
       "Interfaces, composition and delegation — derived from problems, not from a definition of SOLID.",
     difficulty: "Easy",
-    estimatedHours: 8,
+    plannedHours: 8,
     topics: ["oop", "generics", "kotlin"],
     unlockedByDefault: true,
     outcomes: [
@@ -64,7 +66,7 @@ const SPECS: ModuleSpec[] = [
     summary:
       "Call stack, heap, references and mutation — enough machinery to reason about what Android does at runtime.",
     difficulty: "Easy",
-    estimatedHours: 5,
+    plannedHours: 5,
     topics: ["execution", "kotlin"],
     outcomes: [
       "Explain what is on the stack and what is on the heap, and why it matters",
@@ -78,7 +80,7 @@ const SPECS: ModuleSpec[] = [
     summary:
       "Process, Application, Activity, Context. Who owns what, how long it lives, and what survives.",
     difficulty: "Medium",
-    estimatedHours: 10,
+    plannedHours: 10,
     topics: ["lifecycle", "viewmodel"],
     outcomes: [
       "Answer 'what survives rotation' and 'what survives process death' separately",
@@ -92,7 +94,7 @@ const SPECS: ModuleSpec[] = [
     summary:
       "Main-thread blocking, ANRs and background work — the problem coroutines were invented to solve.",
     difficulty: "Medium",
-    estimatedHours: 6,
+    plannedHours: 6,
     topics: ["execution", "coroutines"],
     outcomes: [
       "Explain why a five-second call on the main thread is an ANR",
@@ -106,7 +108,7 @@ const SPECS: ModuleSpec[] = [
     summary:
       "Scopes, jobs, cancellation and structured concurrency — ownership as the organising idea.",
     difficulty: "Medium",
-    estimatedHours: 14,
+    plannedHours: 14,
     topics: ["coroutines"],
     outcomes: [
       "Say who owns a coroutine and when it is cancelled, for any snippet",
@@ -120,7 +122,7 @@ const SPECS: ModuleSpec[] = [
     summary:
       "One value versus many over time. Cold and hot, and the operators that actually differ.",
     difficulty: "Medium",
-    estimatedHours: 14,
+    plannedHours: 14,
     topics: ["flow", "coroutines"],
     outcomes: [
       "Explain cold versus hot, and spot the duplicate-collector bug",
@@ -134,7 +136,7 @@ const SPECS: ModuleSpec[] = [
     summary:
       "Making impossible states impossible, and pushing every decision out of the UI.",
     difficulty: "Medium",
-    estimatedHours: 8,
+    plannedHours: 8,
     topics: ["viewmodel", "flow", "architecture"],
     outcomes: [
       "Convert loose flags into a state type that cannot express nonsense",
@@ -148,7 +150,7 @@ const SPECS: ModuleSpec[] = [
     summary:
       "UI as a function of state: recomposition, stability, effects and the cost of doing work in a composable.",
     difficulty: "Medium",
-    estimatedHours: 16,
+    plannedHours: 16,
     topics: ["compose"],
     outcomes: [
       "Say what causes a given composable to recompose",
@@ -162,7 +164,7 @@ const SPECS: ModuleSpec[] = [
     summary:
       "HTTP before Retrofit: verbs, status codes, headers, auth, pagination, timeouts and retries.",
     difficulty: "Medium",
-    estimatedHours: 8,
+    plannedHours: 8,
     topics: ["networking"],
     outcomes: [
       "Read a request and response without a library in the way",
@@ -176,7 +178,7 @@ const SPECS: ModuleSpec[] = [
     summary:
       "Four representations of one thing, why they diverge, and when fewer is the right answer.",
     difficulty: "Medium",
-    estimatedHours: 8,
+    plannedHours: 8,
     topics: ["data-modelling", "networking", "architecture"],
     outcomes: [
       "Justify each model that exists — or delete the one that does not earn its place",
@@ -190,7 +192,7 @@ const SPECS: ModuleSpec[] = [
     summary:
       "Tables, keys, indexes, joins and transactions — enough relational thinking to reason about Room.",
     difficulty: "Medium",
-    estimatedHours: 8,
+    plannedHours: 8,
     topics: ["sql"],
     outcomes: [
       "Design a small schema with sane keys and relationships",
@@ -204,7 +206,7 @@ const SPECS: ModuleSpec[] = [
     summary:
       "Entities, DAOs, Flow queries and migrations — and choosing between Room, DataStore and memory.",
     difficulty: "Medium",
-    estimatedHours: 10,
+    plannedHours: 10,
     topics: ["room", "sql", "flow"],
     outcomes: [
       "Explain why a DAO query returns Flow but an insert suspends",
@@ -218,7 +220,7 @@ const SPECS: ModuleSpec[] = [
     summary:
       "Coordinating remote and local sources behind one honest answer to 'where does this come from?'.",
     difficulty: "Hard",
-    estimatedHours: 10,
+    plannedHours: 10,
     topics: ["repositories", "architecture", "room", "networking"],
     outcomes: [
       "Decide precedence when cache and network disagree",
@@ -232,7 +234,7 @@ const SPECS: ModuleSpec[] = [
     summary:
       "The database as source of truth, refresh as a side effect, and what stale actually costs.",
     difficulty: "Hard",
-    estimatedHours: 10,
+    plannedHours: 10,
     topics: ["offline", "repositories", "room"],
     outcomes: [
       "Trace a write from tap, through cache, to server and back",
@@ -246,7 +248,7 @@ const SPECS: ModuleSpec[] = [
     summary:
       "Deriving layers from a screen that does too much — and knowing when to stop adding them.",
     difficulty: "Hard",
-    estimatedHours: 12,
+    plannedHours: 12,
     topics: ["architecture", "repositories"],
     outcomes: [
       "Derive boundaries from real pressure rather than from a diagram",
@@ -260,7 +262,7 @@ const SPECS: ModuleSpec[] = [
     summary:
       "Constructing the graph by hand until the problem is obvious, then naming the pattern.",
     difficulty: "Hard",
-    estimatedHours: 6,
+    plannedHours: 6,
     topics: ["di", "oop"],
     outcomes: [
       "Explain what constructor injection buys before any framework appears",
@@ -274,7 +276,7 @@ const SPECS: ModuleSpec[] = [
     summary:
       "What the annotations actually generate, what a scope means, and when @Binds beats @Provides.",
     difficulty: "Hard",
-    estimatedHours: 12,
+    plannedHours: 12,
     topics: ["dagger", "di"],
     outcomes: [
       "Describe the code Dagger generates rather than only the annotations you typed",
@@ -288,7 +290,7 @@ const SPECS: ModuleSpec[] = [
     summary:
       "Starting from the behaviour worth protecting, then choosing the seam and the double.",
     difficulty: "Hard",
-    estimatedHours: 14,
+    plannedHours: 14,
     topics: ["testing"],
     outcomes: [
       "Say what a given test actually protects, and delete it if the answer is nothing",
@@ -302,7 +304,7 @@ const SPECS: ModuleSpec[] = [
     summary:
       "What happens between clicking Run and an APK existing, and why builds get slow.",
     difficulty: "Hard",
-    estimatedHours: 8,
+    plannedHours: 8,
     topics: ["gradle"],
     outcomes: [
       "Walk the build from source to DEX to package",
@@ -316,7 +318,7 @@ const SPECS: ModuleSpec[] = [
     summary:
       "What runs between a push and users receiving the change — and what should block a merge.",
     difficulty: "Hard",
-    estimatedHours: 6,
+    plannedHours: 6,
     topics: ["ci-cd", "gradle"],
     outcomes: [
       "Explain every step of a pipeline you did not write",
@@ -330,7 +332,7 @@ const SPECS: ModuleSpec[] = [
     summary:
       "Branches, reviews and the parts of the job that are communication rather than code.",
     difficulty: "Medium",
-    estimatedHours: 6,
+    plannedHours: 6,
     topics: ["git"],
     outcomes: [
       "Produce a change-set a reviewer can actually follow",
@@ -344,7 +346,7 @@ const SPECS: ModuleSpec[] = [
     summary:
       "How you find out a feature is broken for users when nobody has filed a bug.",
     difficulty: "Hard",
-    estimatedHours: 6,
+    plannedHours: 6,
     topics: ["observability"],
     outcomes: [
       "Decide what to log — and what must never be logged",
@@ -358,7 +360,7 @@ const SPECS: ModuleSpec[] = [
     summary:
       "Leaks, jank, duplicate work and races — found by hypothesis and evidence, not by guessing.",
     difficulty: "Hard",
-    estimatedHours: 10,
+    plannedHours: 10,
     topics: ["performance", "compose", "coroutines"],
     outcomes: [
       "Follow a disciplined loop: observe, hypothesise, isolate, verify",
@@ -372,7 +374,7 @@ const SPECS: ModuleSpec[] = [
     summary:
       "Tracing a feature end to end in a codebase nobody has explained to you.",
     difficulty: "Hard",
-    estimatedHours: 8,
+    plannedHours: 8,
     topics: ["codebase", "architecture"],
     outcomes: [
       "Find the screen, its state owner, its data source and its tests, in that order",
@@ -386,7 +388,7 @@ const SPECS: ModuleSpec[] = [
     summary:
       "From an ambiguous ticket to a shipped, tested, observable feature you can defend.",
     difficulty: "Hard",
-    estimatedHours: 16,
+    plannedHours: 16,
     topics: ["ownership", "architecture", "testing"],
     outcomes: [
       "Turn 'add favourites' into clarified requirements and a sequenced plan",
@@ -400,7 +402,7 @@ const SPECS: ModuleSpec[] = [
     summary:
       "Designing a client feature end to end under real constraints: offline, sync, paging, scale.",
     difficulty: "Hard",
-    estimatedHours: 12,
+    plannedHours: 12,
     topics: ["architecture", "offline", "performance"],
     outcomes: [
       "Drive a design from requirements through data flow to trade-offs",
@@ -414,7 +416,7 @@ const SPECS: ModuleSpec[] = [
     summary:
       "Surviving several layers of 'why?' on the things you actually built.",
     difficulty: "Hard",
-    estimatedHours: 12,
+    plannedHours: 12,
     topics: ["dsa", "architecture", "coroutines"],
     outcomes: [
       "Answer a concept question and then three follow-ups beneath it",
@@ -434,6 +436,46 @@ function countLessons(moduleId: string): number {
   return ALL_LESSONS.filter((l) => l.moduleId === moduleId).length;
 }
 
+/**
+ * Hours of material that actually exists — lesson minutes plus the exercises'
+ * own estimates — not a number somebody typed.
+ *
+ * The authored figures claimed ~253 hours across the 26 modules that have no
+ * lesson at all. That is the same claimed-not-computed shape as every other
+ * figure this file already derives, and the most expensive version of it: it
+ * tells the learner the course is four times the size it is.
+ *
+ * `spec.estimatedHours` survives as `plannedHours` — what the module is
+ * intended to become — so the gap between planned and real stays visible
+ * instead of being quietly rounded away.
+ */
+function availableHours(moduleId: string, topics: TopicId[]): number {
+  const wanted = new Set(topics);
+  const lessonMinutes = ALL_LESSONS.filter((l) => l.moduleId === moduleId).reduce(
+    (n, l) => n + l.sections.reduce((m, s) => m + (s.endMinute - s.startMinute), 0),
+    0,
+  );
+  const exerciseMinutes = ALL_QUESTIONS.filter((q) =>
+    q.topics.some((t) => wanted.has(t)),
+  ).reduce((n, q) => n + (q.estimatedMinutes ?? 0), 0);
+  return Math.round(((lessonMinutes + exerciseMinutes) / 60) * 10) / 10;
+}
+
+/**
+ * How many lessons a module needs, derived rather than authored.
+ *
+ * A 120-minute lesson can teach roughly four concepts properly — Day 1 covers
+ * five of m01's ten and is already full. So the denominator on "Lesson 1 of 3"
+ * comes from the concept graph, and moves on its own when concepts are added,
+ * instead of being a number somebody typed once.
+ */
+const CONCEPTS_PER_LESSON = 4;
+
+function plannedLessons(moduleId: string): number {
+  const n = CONCEPTS.filter((c) => c.moduleId === moduleId).length;
+  return Math.max(1, Math.ceil(n / CONCEPTS_PER_LESSON));
+}
+
 const MODULES: Module[] = SPECS.map((spec, i) => ({
   id: spec.id,
   index: i + 1,
@@ -442,7 +484,9 @@ const MODULES: Module[] = SPECS.map((spec, i) => ({
   difficulty: spec.difficulty,
   lessonCount: countLessons(spec.id),
   exerciseCount: countExercises(spec.topics),
-  estimatedHours: spec.estimatedHours,
+  estimatedHours: availableHours(spec.id, spec.topics),
+  plannedHours: spec.plannedHours,
+  plannedLessons: plannedLessons(spec.id),
   topics: spec.topics,
   unlockedByDefault: spec.unlockedByDefault,
   outcomes: spec.outcomes,

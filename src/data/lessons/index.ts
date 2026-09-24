@@ -10,11 +10,18 @@
 import type { Lesson, LessonSection } from "@/lib/types";
 import { DAY_1 } from "./day1";
 import { DAY_2 } from "./day2";
+import { DAY_3 } from "./day3";
+import { DAY_4 } from "./day4";
+import { DAY_5 } from "./day5";
 
 export { DAY_1 } from "./day1";
 export { DAY_2 } from "./day2";
+export { DAY_3 } from "./day3";
+export { DAY_4 } from "./day4";
+export { DAY_5 } from "./day5";
 
-export const ALL_LESSONS: Lesson[] = [DAY_1, DAY_2];
+// Registry order is the order a learner walks: m01 in full, then m02, then m04.
+export const ALL_LESSONS: Lesson[] = [DAY_1, DAY_4, DAY_5, DAY_3, DAY_2];
 
 export function getLesson(slug: string): Lesson | undefined {
   return ALL_LESSONS.find((l) => l.slug === slug);

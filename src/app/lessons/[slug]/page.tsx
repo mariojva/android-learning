@@ -18,7 +18,7 @@ export async function generateMetadata({
   const { slug } = await params;
   const lesson = getLesson(slug);
   if (!lesson) return { title: "Lesson" };
-  return { title: `Day ${lesson.dayNumber} · ${lesson.title}`, description: lesson.goal };
+  return { title: lesson.title, description: lesson.goal };
 }
 
 export default async function LessonPage({

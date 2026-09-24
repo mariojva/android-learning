@@ -5,7 +5,7 @@ import { usePathname } from "next/navigation";
 import { NAV } from "./nav";
 import { cn } from "@/lib/utils";
 import { useProgress } from "@/lib/progress/context";
-import { reviewQueue } from "@/lib/progress/selectors";
+import { dueCount } from "@/lib/progress/review";
 import { QUESTION_COUNTS } from "@/data/questions";
 import { currentStreak } from "@/data/activity";
 import { IconFlame, IconX } from "@/components/icons";
@@ -16,7 +16,8 @@ export function SidebarContent({ onNavigate }: { onNavigate?: () => void }) {
   const { progress } = useProgress();
 
   const badges = useMemo(() => {
-    const review = reviewQueue(progress).reduce((sum, r) => sum + r.dueCount, 0);
+    // Concepts due for spaced review — the same number /review opens with.
+    const review = dueCount(progress);
     return {
       questions: String(QUESTION_COUNTS.total),
       bookmarks: String(progress.bookmarks.length),

@@ -125,7 +125,7 @@ export default async function LearnHubPage({
               </div>
             </div>
             <LinkButton href={`/lessons/${lesson.slug}`} tone="primary" size="sm">
-              Open Day {lesson.dayNumber}
+              Open lesson
               <IconArrowRight size={14} />
             </LinkButton>
           </Card>

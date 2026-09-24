@@ -18,6 +18,7 @@ import { cn, formatMinutes, difficultyStyles } from "@/lib/utils";
 import type { DailyPlanSlot, Difficulty, ReviewItem, TopicMastery, QuestionTrack } from "@/lib/types";
 import type { Lesson } from "@/lib/types";
 import { topicLabel } from "@/data/topics";
+import { lessonLabel } from "@/lib/progress/lessons";
 
 /* ------------------------------ Stat tile -------------------------- */
 
@@ -82,7 +83,7 @@ export function ContinueCard({
             {lesson.title}
           </h2>
           <p className="mt-1 text-[13.5px] text-muted">
-            Day {lesson.dayNumber} · {lesson.goal}
+            {lessonLabel(lesson)} · {lesson.goal}
           </p>
 
           <div className="mt-4 flex items-center gap-3">
@@ -96,7 +97,7 @@ export function ContinueCard({
           tone="primary"
           className="shrink-0"
         >
-          {done ? "Review" : percent > 0 ? "Continue" : `Start Day ${lesson.dayNumber}`}
+          {done ? "Review" : percent > 0 ? "Continue" : "Start lesson"}
           <IconArrowRight size={15} />
         </LinkButton>
       </div>
